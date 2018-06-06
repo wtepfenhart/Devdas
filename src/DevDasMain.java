@@ -17,22 +17,16 @@ public class DevDasMain {
 	private String virtualHost;
 	
 	
-
 	/**
 	 * 
 	 */
-	public DevDasMain(String[] args) {
-		super();
+	public void initialize(String [] args) {
 		String current ="";
-	    try {
-			current = new java.io.File( "." ).getCanonicalPath();
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-	    try{
+		try{
 	    	
 	    	// get default values from the user.ini file located in the resources file
+
+			current = new java.io.File( "." ).getCanonicalPath();
 	        Properties p = new Properties();
 	        p.load(new FileInputStream(current+"/resources/user.ini"));
 	        ipAddress = p.getProperty("ipAddress");
@@ -68,11 +62,21 @@ public class DevDasMain {
 	    		System.out.println("Unknown argument: " + args[i] +"\n");
 	    		System.out.println("Usage:");
 	    		System.out.println("\tDevDasMain [-i address] [-u username] [-p password] [-v virtualhost]");
+	    		System.exit(0);
 	    		break;		
 	    	
 	    	}
 	    		
 	    }
+		
+	}
+
+	/**
+	 * 
+	 */
+	public DevDasMain(String[] args) {
+		super();
+		this.initialize(args);
 	    
 
 }
