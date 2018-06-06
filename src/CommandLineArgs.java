@@ -9,7 +9,8 @@ import java.util.ArrayList;
  *
  */
 
-
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * @author wtepfenhart
@@ -19,10 +20,13 @@ import java.util.ArrayList;
 public class CommandLineArgs {
 
     protected ArrayList arguments;
+    protected Map clArgs;
     
     public CommandLineArgs(String[] args)
     {
     	arguments = new ArrayList();
+    	clArgs = new HashMap();
+    	
         parse(args);
     }
     
@@ -35,6 +39,9 @@ public class CommandLineArgs {
     	for (String a :args) arguments.add(a);
     }
     
+    // the exxample that I initially followed had this function
+    // unfortunately once I made the modifications that were necessary for
+    // this application, the function was basically useless
     public boolean hasOption(String opt)
     {
         String str;
