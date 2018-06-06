@@ -10,13 +10,86 @@ import java.util.Properties;
  * @author wtepfenhart
  *
  */
-public class DevDasMain {
+public class Configuration {
 	private String ipAddress;
 	private String userName;
 	private String userPassword;
 	private String virtualHost;
+	private String exchange;
 	
+	/**
+	 * @return the ipAddress
+	 */
+	public String getIpAddress() {
+		return ipAddress;
+	}
+
+	/**
+	 * @param ipAddress the ipAddress to set
+	 */
+	public void setIpAddress(String ipAddress) {
+		this.ipAddress = ipAddress;
+	}
+
+	/**
+	 * @return the userName
+	 */
+	public String getUserName() {
+		return userName;
+	}
+
+	/**
+	 * @param userName the userName to set
+	 */
+	public void setUserName(String userName) {
+		this.userName = userName;
+	}
+
+	/**
+	 * @return the userPassword
+	 */
+	public String getUserPassword() {
+		return userPassword;
+	}
+
+	/**
+	 * @param userPassword the userPassword to set
+	 */
+	public void setUserPassword(String userPassword) {
+		this.userPassword = userPassword;
+	}
+
+	/**
+	 * @return the virtualHost
+	 */
+	public String getVirtualHost() {
+		return virtualHost;
+	}
+
+	/**
+	 * @param virtualHost the virtualHost to set
+	 */
+	public void setVirtualHost(String virtualHost) {
+		this.virtualHost = virtualHost;
+	}
+
 	
+
+
+	/**
+	 * @return the exchange
+	 */
+	public String getExchange() {
+		return exchange;
+	}
+
+	/**
+	 * @param exchange the exchange to set
+	 */
+	public void setExchange(String exchange) {
+		this.exchange = exchange;
+	}
+
 	/**
 	 * 
 	 */
@@ -33,6 +106,7 @@ public class DevDasMain {
 	        userName = p.getProperty("userName");
 	        userPassword = p.getProperty("userPassword");
 	        virtualHost = p.getProperty("virtualHost");
+	        exchange = p.getProperty("exchange");
 	        }
 	      catch (Exception e) {
 	        System.out.println(e);
@@ -58,10 +132,14 @@ public class DevDasMain {
 	    		virtualHost = cmd.valueOf("-v");
 	    		i++;
 	    		break;
+	    	case "-e":
+	    		exchange = cmd.valueOf("-e");
+	    		i++;
+	    		break;
 	    	default:
 	    		System.out.println("Unknown argument: " + args[i] +"\n");
 	    		System.out.println("Usage:");
-	    		System.out.println("\tDevDasMain [-i address] [-u username] [-p password] [-v virtualhost]");
+	    		System.out.println("\tDevDasMain [-i address] [-u username] [-p password] [-v virtualhost] [-q queue]");
 	    		System.exit(0);
 	    		break;		
 	    	
@@ -73,8 +151,9 @@ public class DevDasMain {
 
 	/**
 	 * 
+	 * @param args
 	 */
-	public DevDasMain(String[] args) {
+	public Configuration(String[] args) {
 		super();
 		this.initialize(args);
 	    
@@ -87,7 +166,7 @@ public class DevDasMain {
 	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		DevDasMain main = new DevDasMain(args);
+		Configuration main = new Configuration(args);
 
 	}
 
