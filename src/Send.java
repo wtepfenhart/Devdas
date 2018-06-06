@@ -102,7 +102,6 @@ public class Send extends Thread{
 	public static void main(String[] argv) throws Exception {
 		// TODO Auto-generated method stub
 		Send mySender;
-		String queueName = "Testing";
 		Configuration config = new Configuration(argv);
 		mySender = new Send(config, "Testing");
 		mySender.start();
@@ -112,7 +111,7 @@ public class Send extends Thread{
 		String msg = scanner.nextLine();
 		mySender.sendMessage(msg);
 		mySender.setRunning(false);
-		
+		scanner.close();
 	}
 
 }

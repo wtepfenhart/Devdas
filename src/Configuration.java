@@ -1,5 +1,4 @@
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.Properties;
 
 /**
@@ -139,7 +138,7 @@ public class Configuration {
 	    	default:
 	    		System.out.println("Unknown argument: " + args[i] +"\n");
 	    		System.out.println("Usage:");
-	    		System.out.println("\tDevDasMain [-i address] [-u username] [-p password] [-v virtualhost] [-q queue]");
+	    		System.out.println("\tDevDasMain [-i address] [-u username] [-p password] [-v virtualhost] [-e exchange]");
 	    		System.exit(0);
 	    		break;		
 	    	
@@ -166,6 +165,7 @@ public class Configuration {
 	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
+		@SuppressWarnings("unused")
 		Configuration main = new Configuration(args);
 
 	}

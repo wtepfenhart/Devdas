@@ -9,9 +9,6 @@ import java.util.ArrayList;
  *
  */
 
-import java.util.Map;
-import java.util.HashMap;
-
 /**
  * @author wtepfenhart
  * This class has some serious limitations. Need to replace this ASAP.
@@ -19,13 +16,11 @@ import java.util.HashMap;
  */
 public class CommandLineArgs {
 
-    protected ArrayList arguments;
-    protected Map clArgs;
+    protected ArrayList<String> arguments;
     
     public CommandLineArgs(String[] args)
     {
-    	arguments = new ArrayList();
-    	clArgs = new HashMap();
+    	arguments = new ArrayList<String>();
     	
         parse(args);
     }
@@ -56,7 +51,6 @@ public class CommandLineArgs {
     
     public String valueOf(String opt)
     {
-        String value = null;
         String str;
         for ( int i = 0; i < arguments.size(); i++ ) {
             str = (String)arguments.get(i);
