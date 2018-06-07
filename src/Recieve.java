@@ -2,8 +2,6 @@
  * 
  */
 import java.io.IOException;
-import java.util.Scanner;
-
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -80,27 +78,10 @@ public class Recieve{
 	 * used for debugging and testing the recieve class code
 	 */
 	public static void main(String[] argv) throws Exception {
-		// TODO Auto-generated method stub
-		Send mySender, mySender2;
 		@SuppressWarnings("unused")
-		Recieve myReciever, myReciever2;
+		Recieve myReciever;
 		Configuration config = new Configuration(argv);
-		myReciever = new Recieve(config, "Testing");
-		myReciever2 = new Recieve(config, "Test");
-		mySender = new Send(config, "Testing");
-		mySender.start();
-		mySender2 = new Send(config, "Testing");
-		mySender2.start();
-		mySender.sendMessage("Hello This is going to succeed!");
-		mySender2.sendMessage("Second message to send");
-		mySender.sendMessage("Third message to send");
-		Scanner scanner = new Scanner(System.in);
-		String msg = scanner.nextLine();
-		mySender.sendMessage(msg);
-		mySender.setRunning(false);
-		mySender2.setRunning(false);
-		scanner.close();
-		System.exit(1);
+		myReciever = new Recieve(config, "Log");
 	}
 
 }

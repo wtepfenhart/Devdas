@@ -1,4 +1,6 @@
-import java.util.Scanner;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 public class LogRecieve extends Recieve {
 
@@ -9,8 +11,20 @@ public class LogRecieve extends Recieve {
 	
 	@Override
 	public void handleMessage(String msg) {
-        System.err.println(" [x] Received '" + msg + "'");
-		
+		JSONParser parser = new JSONParser();
+		Object o = new JSONParser();
+		try {
+			o = parser.parse(msg);
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		JSONObject j= (JSONObject) o;
+		if (j.get("Event").equals("quit")) { 
+			System.err.println("Recieved Quit Message");
+			System.exit(1);
+		};
+        System.err.println(j.get("Event") + "\t" + j.get("Severity") + "\t" + j.get("Message") + "\t" + j.get("TimeStamp"));
 	}
 
 	/**
@@ -20,27 +34,10 @@ public class LogRecieve extends Recieve {
 	 * 
 	 */
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		Send mySender, logSender;
 		@SuppressWarnings("unused")
-		Recieve myReciever, myReciever2;
+		Recieve myReciever, logReciever;
 		Configuration config = new Configuration(args);
-		myReciever = new Recieve(config, "Testing");
-		myReciever2 = new LogRecieve(config, "Log");
-		mySender = new Send(config, "Testing");
-		mySender.start();
-		logSender = new Send(config, "Log");
-		logSender.start();
-		mySender.sendMessage("Hello This is going to succeed!");
-		logSender.sendMessage("Second message to send");
-		mySender.sendMessage("Third message to send");
-		Scanner scanner = new Scanner(System.in);
-		String msg = scanner.nextLine();
-		mySender.sendMessage(msg);
-		mySender.setRunning(false);
-		logSender.setRunning(false);
-		scanner.close();
-		System.exit(1);
+		logReciever = new LogRecieve(config, "Log");
 	}
 
 }

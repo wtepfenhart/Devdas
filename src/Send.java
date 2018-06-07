@@ -84,13 +84,13 @@ public class Send extends Thread{
 
 			channel.exchangeDeclare(exchange, "fanout");
 			channel.basicPublish(exchange, "", null, msg.getBytes("UTF-8"));
-			System.out.println(" [x] Sent '" + msg + "'");
+//			System.out.println(" [x] Sent '" + msg + "'");
 
 			channel.close();
 			connection.close();
 		}
 		catch (Exception e) {
-			System.out.println(e);
+//			System.out.println(e);
 		}
 
 	}
