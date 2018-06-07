@@ -1,15 +1,38 @@
+/**
+ *
+ * @file LogRecieve.java
+ * @author wtepfenhart
+ * @date: May 29, 2018
+ * Copyright wtepfenhart (c) 2018
+ *
+ */
+
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+/**
+ * 
+ * @author wtepfenhart
+ *
+ */
 public class LogRecieve extends Recieve {
 
-	public LogRecieve(Configuration application, String exch) {
-		super(application, exch);
+	/**
+	 * 
+	 * @param configuration - the configuration object
+	 * @param exch - the exchange for rabbitmq publish/subscribe
+	 */
+	public LogRecieve(Configuration configuration, String exch) {
+		super(configuration, exch);
 		// TODO Auto-generated constructor stub
 	}
 	
+
 	@Override
+	/**
+	 * @param msg - the json message to be handled
+	 */
 	public void handleMessage(String msg) {
 		JSONParser parser = new JSONParser();
 		Object o = new JSONParser();

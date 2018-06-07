@@ -1,3 +1,12 @@
+/**
+ *
+ * @file Configuration.java
+ * @author wtepfenhart
+ * @date: May 29, 2018
+ * Copyright wtepfenhart (c) 2018
+ *
+ */
+
 import java.io.FileInputStream;
 import java.util.Properties;
 
@@ -17,14 +26,14 @@ public class Configuration {
 	private String exchange;
 	
 	/**
-	 * @return the ipAddress
+	 * @return the ipAddress - the IP Address of the rabbitmq server
 	 */
 	public String getIpAddress() {
 		return ipAddress;
 	}
 
 	/**
-	 * @param ipAddress the ipAddress to set
+	 * @param ipAddress - the ipAddress to set
 	 */
 	public void setIpAddress(String ipAddress) {
 		this.ipAddress = ipAddress;
@@ -38,7 +47,7 @@ public class Configuration {
 	}
 
 	/**
-	 * @param userName the userName to set
+	 * @param userName - the userName to set
 	 */
 	public void setUserName(String userName) {
 		this.userName = userName;
@@ -52,7 +61,7 @@ public class Configuration {
 	}
 
 	/**
-	 * @param userPassword the userPassword to set
+	 * @param userPassword - the userPassword to set
 	 */
 	public void setUserPassword(String userPassword) {
 		this.userPassword = userPassword;
@@ -66,7 +75,7 @@ public class Configuration {
 	}
 
 	/**
-	 * @param virtualHost the virtualHost to set
+	 * @param virtualHost - the virtualHost to set
 	 */
 	public void setVirtualHost(String virtualHost) {
 		this.virtualHost = virtualHost;
@@ -83,14 +92,14 @@ public class Configuration {
 	}
 
 	/**
-	 * @param exchange the exchange to set
+	 * @param exchange - the exchange to set
 	 */
 	public void setExchange(String exchange) {
 		this.exchange = exchange;
 	}
 
 	/**
-	 * 
+	 * @param args - command line arguments
 	 */
 	public void initialize(String [] args) {
 		String current ="";

@@ -1,5 +1,10 @@
 /**
- * 
+ *
+ * @file Recieve.java
+ * @author wtepfenhart
+ * @date: May 29, 2018
+ * Copyright wtepfenhart (c) 2018
+ *
  */
 import java.io.IOException;
 import com.rabbitmq.client.AMQP;
@@ -22,19 +27,19 @@ public class Recieve{
 	
 	/**
 	 * 
-	 * @param application
-	 * @param queueName
+	 * @param configuration - configuration object
+	 * @param exchange - the rabbitmq exchange for publish/subscribe
 	 */
-	public Recieve(Configuration application, String exch) {
-		app = application;
-		this.recieveMessage(exch);
+	public Recieve(Configuration configuration, String exchage) {
+		app = configuration;
+		this.recieveMessage(exchage);
 	}
 
 
 
 	/**
 	 * 
-	 * @param msg
+	 * @param exch -the exchange for publish/subsribe 
 	 */
 	public void recieveMessage(String exch) {
 		ConnectionFactory factory = new ConnectionFactory();
@@ -68,13 +73,17 @@ public class Recieve{
 
 	}
 	
-	
+	/**
+	 * 
+	 * @param message - the message received from rabbitmq
+	 * this method is intended to be overriddn for different kinds of messages
+	 */
 	public void handleMessage(String message) {
         System.out.println(" [x] Received '" + message + "'");
 	}
 	
 	/**
-	 * @param argv
+	 * @param argv - command line arguements
 	 * used for debugging and testing the recieve class code
 	 */
 	public static void main(String[] argv) throws Exception {

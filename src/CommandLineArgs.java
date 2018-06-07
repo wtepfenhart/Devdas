@@ -1,5 +1,3 @@
-import java.util.ArrayList;
-
 /**
  *
  * @file CommandLineArgs.java
@@ -8,6 +6,8 @@ import java.util.ArrayList;
  * Copyright wtepfenhart (c) 2018
  *
  */
+
+import java.util.ArrayList;
 
 /**
  * @author wtepfenhart
@@ -27,7 +27,7 @@ public class CommandLineArgs {
     
     /**
      * 
-     * @param args
+     * @param args - command line args
      */
     public void parse(String[] args)
     {
@@ -49,6 +49,11 @@ public class CommandLineArgs {
         return false;
     }
     
+    /**
+     * 
+     * @param opt - the option key to search for
+     * @return
+     */
     public String valueOf(String opt)
     {
         String str;

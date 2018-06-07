@@ -1,5 +1,10 @@
 /**
- * 
+ *
+ * @file Send.java
+ * @author wtepfenhart
+ * @date: May 29, 2018
+ * Copyright wtepfenhart (c) 2018
+ *
  */
 import java.util.Scanner;
 
@@ -7,14 +12,15 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 
-	// TODO Move connection details from DevDasMain to config object
 
 /**
  * @author wtepfenhart
+ * Made this a thread so that it can operate without blocking any other
+ * functionality of the program
  *
  */
 public class Send extends Thread{
-	private Configuration app;
+	private Configuration configuration;
 	private String exchange;
 	private boolean running;
 	private String message;
@@ -22,11 +28,11 @@ public class Send extends Thread{
 	
 	/**
 	 * 
-	 * @param application
-	 * @param queueName
+	 * @param config - this is an object that contains the configuration data
+	 * @param queueName - this is the name of the rabbit queue for publish/subscribe
 	 */
-	public Send(Configuration application, String exch) {
-		app = application;
+	public Send(Configuration config, String exch) {
+		configuration = config;
 		exchange = exch;
 	}
 
@@ -54,14 +60,14 @@ public class Send extends Thread{
 
 	
 	/**
-	 * @param running the running to set
+	 * @param running - the setter to indicated that the thread should be running
 	 */
 	public void setRunning(boolean running) {
 		this.running = running;
 	}
 
 	/**
-	 * @param message the message to set
+	 * @param message - the message to set for sending
 	 */
 	public void setMessage(String message) {
 		this.message = message;
@@ -70,14 +76,14 @@ public class Send extends Thread{
 	
 	/**
 	 * 
-	 * @param msg
+	 * @param msg - parameter for the message to be sent
 	 */
 	public void sendMessage(String msg) {
 		ConnectionFactory factory = new ConnectionFactory();
-		factory.setHost(app.getIpAddress());
-		factory.setUsername(app.getUserName());
-		factory.setPassword(app.getUserPassword());
-		factory.setVirtualHost(app.getVirtualHost());
+		factory.setHost(configuration.getIpAddress());
+		factory.setUsername(configuration.getUserName());
+		factory.setPassword(configuration.getUserPassword());
+		factory.setVirtualHost(configuration.getVirtualHost());
 		try {
 			Connection connection = factory.newConnection();
 			Channel channel = connection.createChannel();
@@ -96,7 +102,7 @@ public class Send extends Thread{
 	}
 	
 	/**
-	 * @param argv
+	 * @param argv - command line arguments
 	 * used for debugging and testing the send class code
 	 */
 	public static void main(String[] argv) throws Exception {
