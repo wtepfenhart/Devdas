@@ -25,7 +25,7 @@ public class Send extends Thread{
 	private boolean running;
 	private String message;
 
-	
+
 	/**
 	 * 
 	 * @param config - this is an object that contains the configuration data
@@ -58,7 +58,7 @@ public class Send extends Thread{
 		System.out.println("Exiting Send Thread");
 	}
 
-	
+
 	/**
 	 * @param running - the setter to indicated that the thread should be running
 	 */
@@ -73,7 +73,7 @@ public class Send extends Thread{
 		this.message = message;
 	}
 
-	
+
 	/**
 	 * 
 	 * @param msg - parameter for the message to be sent
@@ -90,17 +90,17 @@ public class Send extends Thread{
 
 			channel.exchangeDeclare(exchange, "fanout");
 			channel.basicPublish(exchange, "", null, msg.getBytes("UTF-8"));
-//			System.out.println(" [x] Sent '" + msg + "'");
+			//			System.out.println(" [x] Sent '" + msg + "'");
 
 			channel.close();
 			connection.close();
 		}
 		catch (Exception e) {
-//			System.out.println(e);
+			//			System.out.println(e);
 		}
 
 	}
-	
+
 	/**
 	 * @param argv - command line arguments
 	 * used for debugging and testing the send class code

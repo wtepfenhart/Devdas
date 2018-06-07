@@ -15,7 +15,7 @@ import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 
-	// TODO Move connection details from DevDasMain to config object
+// TODO Move connection details from DevDasMain to config object
 
 /**
  * @author wtepfenhart
@@ -24,7 +24,7 @@ import com.rabbitmq.client.Envelope;
 public class Recieve{
 	private Configuration app;
 
-	
+
 	/**
 	 * 
 	 * @param configuration - configuration object
@@ -52,36 +52,36 @@ public class Recieve{
 			Channel channel = connection.createChannel();
 
 			channel.exchangeDeclare(exch, "fanout");
-		    String queueName = channel.queueDeclare().getQueue();
-		    channel.queueBind(queueName, exch, "");
+			String queueName = channel.queueDeclare().getQueue();
+			channel.queueBind(queueName, exch, "");
 
-		    System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
+			System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
 
-		    Consumer consumer = new DefaultConsumer(channel) {
-		      @Override
-		      public void handleDelivery(String consumerTag, Envelope envelope,
-		                                 AMQP.BasicProperties properties, byte[] body) throws IOException {
-		        String message = new String(body, "UTF-8");
-		        handleMessage(message);
-		      }
-		    };
-		    channel.basicConsume(queueName, true, consumer);
+			Consumer consumer = new DefaultConsumer(channel) {
+				@Override
+				public void handleDelivery(String consumerTag, Envelope envelope,
+						AMQP.BasicProperties properties, byte[] body) throws IOException {
+					String message = new String(body, "UTF-8");
+					handleMessage(message);
+				}
+			};
+			channel.basicConsume(queueName, true, consumer);
 		}
 		catch (Exception e) {
 			System.out.println(e);
 		}
 
 	}
-	
+
 	/**
 	 * 
 	 * @param message - the message received from rabbitmq
 	 * this method is intended to be overriddn for different kinds of messages
 	 */
 	public void handleMessage(String message) {
-        System.out.println(" [x] Received '" + message + "'");
+		System.out.println(" [x] Received '" + message + "'");
 	}
-	
+
 	/**
 	 * @param argv - command line arguements
 	 * used for debugging and testing the recieve class code

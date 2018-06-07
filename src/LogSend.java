@@ -38,7 +38,7 @@ public class LogSend extends Send {
 		j.put("TimeStamp", "\'" + d + "\'");
 		this.sendMessage(j.toJSONString());
 	}
-	
+
 	/**
 	 * 
 	 * @param args - command line arguments

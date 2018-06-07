@@ -27,7 +27,7 @@ public class LogRecieve extends Recieve {
 		super(configuration, exch);
 		// TODO Auto-generated constructor stub
 	}
-	
+
 
 	@Override
 	/**
@@ -47,7 +47,7 @@ public class LogRecieve extends Recieve {
 			System.err.println("Recieved Quit Message");
 			System.exit(1);
 		};
-        System.err.println(j.get("Event") + "\t" + j.get("Severity") + "\t" + j.get("Message") + "\t" + j.get("TimeStamp"));
+		System.err.println(j.get("Event") + "\t" + j.get("Severity") + "\t" + j.get("Message") + "\t" + j.get("TimeStamp"));
 	}
 
 	/**
