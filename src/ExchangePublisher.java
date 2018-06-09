@@ -1,12 +1,14 @@
 /**
  *
- * @file Send.java
+ * @file ExchangePublisher.java
  * @author wtepfenhart
  * @date: May 29, 2018
  * Copyright wtepfenhart (c) 2018
  *
  */
 import java.util.Scanner;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -15,25 +17,38 @@ import com.rabbitmq.client.ConnectionFactory;
 
 /**
  * @author wtepfenhart
+ *  <p/>
+ * The EchangePublisher class publishes a message (Java String message)
+ * in a rabbitmq exchange. It can be wrapped or extended to allow
+ * controlled construction of formatted messages such as JSON, XML, CSV, or
+ * whatever.
+ * 
+ * <p/>
+ * It opens and closes the connection to rabbitmq for each message that it needs to 
+ * send. This is necessary since leaving the connection open will timeout with 
+ * the result that attempts to send a message will fail when
+ * there are large time delays between messages.
+ * 
+ * <p/>
  * Made this a thread so that it can operate without blocking any other
- * functionality of the program
- *
+ * functionality of the program. 
+ * 
  */
-public class Send extends Thread{
+public class ExchangePublisher extends Thread{
 	private Configuration configuration;
 	private String exchange;
 	private boolean running;
-	private String message;
-
+	private BlockingQueue<String> queue;
 
 	/**
 	 * 
 	 * @param config - this is an object that contains the configuration data
 	 * @param queueName - this is the name of the rabbit queue for publish/subscribe
 	 */
-	public Send(Configuration config, String exch) {
+	public ExchangePublisher(Configuration config, String exch) {
 		configuration = config;
 		exchange = exch;
+		queue = new ArrayBlockingQueue<String>(1024);
 	}
 
 	/**
@@ -44,18 +59,20 @@ public class Send extends Thread{
 		running = true;
 		while (running) {
 			try {
-				if (message != null) {		    			
-					sendMessage(message);
-					message = null;
+				if (queue.size() > 0) {		    			
+					sendMessage(queue.take());
 				}
-				else
+				else {
 					sleep(10);
+				}
 			} catch (InterruptedException e) {
+				System.out.println("Died in sleep!");
 				// TODO Auto-generated catch block
+				currentThread().interrupt();
 				e.printStackTrace();
 			}
 		}
-		System.out.println("Exiting Send Thread");
+		System.out.println("Exiting ExchangePublisher Thread");
 	}
 
 
@@ -70,7 +87,12 @@ public class Send extends Thread{
 	 * @param message - the message to set for sending
 	 */
 	public void setMessage(String message) {
-		this.message = message;
+		try {
+			queue.put(message);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 
@@ -79,6 +101,7 @@ public class Send extends Thread{
 	 * @param msg - parameter for the message to be sent
 	 */
 	public void sendMessage(String msg) {
+		// TODO Change to returning boolean to indicate success (junit testing)
 		ConnectionFactory factory = new ConnectionFactory();
 		factory.setHost(configuration.getIpAddress());
 		factory.setUsername(configuration.getUserName());
@@ -96,6 +119,7 @@ public class Send extends Thread{
 			connection.close();
 		}
 		catch (Exception e) {
+			// TODO Add error logging here. 
 			//			System.out.println(e);
 		}
 
@@ -104,12 +128,13 @@ public class Send extends Thread{
 	/**
 	 * @param argv - command line arguments
 	 * used for debugging and testing the send class code
+	 * 
 	 */
+	// TODO replace with junit testing
 	public static void main(String[] argv) throws Exception {
-		// TODO Auto-generated method stub
-		Send mySender;
+		ExchangePublisher mySender;
 		Configuration config = new Configuration(argv);
-		mySender = new Send(config, "Testing");
+		mySender = new ExchangePublisher(config, "Testing");
 		mySender.start();
 		mySender.sendMessage("Hello This is going to fail!");
 		mySender.sendMessage("Second message to send");
@@ -118,6 +143,7 @@ public class Send extends Thread{
 		mySender.sendMessage(msg);
 		mySender.setRunning(false);
 		scanner.close();
+		
 	}
 
 }

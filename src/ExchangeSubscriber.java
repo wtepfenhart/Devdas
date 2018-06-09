@@ -1,9 +1,10 @@
 /**
  *
- * @file Recieve.java
+ * @file ExchangeSubscriber.java
  * @author wtepfenhart
  * @date: May 29, 2018
  * Copyright wtepfenhart (c) 2018
+ * 
  *
  */
 import java.io.IOException;
@@ -15,13 +16,19 @@ import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 
-// TODO Move connection details from DevDasMain to config object
 
 /**
  * @author wtepfenhart
+ * 
+ * <p/>
+ * This class to be a basic subscriber that is
+ * to be extended by overriding the handleMesssage(msg) method.
+ * The handleDelivery is a pass-through method defined
+ * within an nested autonomous class.
+ * 
  *
  */
-public class Recieve{
+public class ExchangeSubscriber{
 	private Configuration app;
 
 
@@ -30,7 +37,7 @@ public class Recieve{
 	 * @param configuration - configuration object
 	 * @param exchange - the rabbitmq exchange for publish/subscribe
 	 */
-	public Recieve(Configuration configuration, String exchage) {
+	public ExchangeSubscriber(Configuration configuration, String exchage) {
 		app = configuration;
 		this.recieveMessage(exchage);
 	}
@@ -62,7 +69,7 @@ public class Recieve{
 				public void handleDelivery(String consumerTag, Envelope envelope,
 						AMQP.BasicProperties properties, byte[] body) throws IOException {
 					String message = new String(body, "UTF-8");
-					handleMessage(message);
+					handleMessage(consumerTag, envelope, properties, message);
 				}
 			};
 			channel.basicConsume(queueName, true, consumer);
@@ -76,21 +83,22 @@ public class Recieve{
 	/**
 	 * 
 	 * @param message - the message received from rabbitmq
-	 * this method is intended to be overriddn for different kinds of messages
+	 * <p/>
+	 * This method is intended to be overridden for different kinds of messages
 	 */
-	public void handleMessage(String message) {
-		System.out.println(" [x] Received '" + message + "'");
+	public void handleMessage(String consumerTag, Envelope envelope, AMQP.BasicProperties properties,String message) {
+		System.out.println(" [x] Received '" + consumerTag + " Messsage: " + message + "'");
 	}
 
 	/**
-	 * @param argv - command line arguements
-	 * used for debugging and testing the recieve class code
+	 * @param argv - command line arguments
+	 * used for debugging and testing the receive class code
 	 */
 	public static void main(String[] argv) throws Exception {
 		@SuppressWarnings("unused")
-		Recieve myReciever;
+		ExchangeSubscriber myReciever;
 		Configuration config = new Configuration(argv);
-		myReciever = new Recieve(config, "Log");
+		myReciever = new ExchangeSubscriber(config, "Testing");
 	}
 
 }

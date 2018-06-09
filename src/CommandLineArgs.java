@@ -34,7 +34,7 @@ public class CommandLineArgs {
 		for (String a :args) arguments.add(a);
 	}
 
-	// the exxample that I initially followed had this function
+	// the example that I initially followed had this function
 	// unfortunately once I made the modifications that were necessary for
 	// this application, the function was basically useless
 	public boolean hasOption(String opt)

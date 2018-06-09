@@ -1,6 +1,6 @@
 /**
  *
- * @file LogSend.java
+ * @file LogPublisher.java
  * @author wtepfenhart
  * @date: May 29, 2018
  * Copyright wtepfenhart (c) 2018
@@ -15,11 +15,10 @@ import org.json.simple.JSONObject;
  * @author wtepfenhart
  *
  */
-public class LogSend extends Send {
+public class LogPublisher extends ExchangePublisher {
 
-	public LogSend(Configuration application, String exch) {
+	public LogPublisher(Configuration application, String exch) {
 		super(application, exch);
-		// TODO Auto-generated constructor stub
 	}
 
 	@SuppressWarnings("unchecked")
@@ -44,9 +43,8 @@ public class LogSend extends Send {
 	 * @param args - command line arguments
 	 */
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
 		Configuration config = new Configuration(args);
-		LogSend s = new LogSend(config, "Log");
+		LogPublisher s = new LogPublisher(config, "Log");
 		s.sendLogMessage("Start", "Started Logsend Main", "Info");
 		for (int i = 0; i < 500 ; i++) {
 			s.sendLogMessage("Test", "This is a test message #" + i, "Info");
