@@ -159,13 +159,21 @@ public class RoutingPublisher extends Thread{
 	public static void main(String[] args) {
 		RoutingPublisher mySender;
 		Configuration config = new Configuration(args);
-		mySender = new RoutingPublisher(config, "Log");
+		mySender = new RoutingPublisher(config, "Stuff");
 		mySender.start();
-		mySender.setMessage("Log","Hello This is going to fail!");
-		mySender.setMessage("Log", "Second message to send");
+		mySender.setMessage("Test","Hello This is going to fail!");
+		mySender.setMessage("Test", "Second message to send");
 		Scanner scanner = new Scanner(System.in);
 		String msg = scanner.nextLine();
 		mySender.setMessage("Log",msg);
+		msg = scanner.nextLine();
+		mySender.setMessage("Test",msg);
+		try {
+			sleep(10);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		mySender.setRunning(false);
 		scanner.close();
 		// TODO Auto-generated method stub
