@@ -1,3 +1,13 @@
+/**
+ *
+ * @file ExchangePublisher.java
+ * @author wtepfenhart
+ * @date: May 29, 2018
+ * Copyright wtepfenhart (c) 2018
+ *
+ */
+
+package devdas;
 import java.util.Scanner;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -6,75 +16,42 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 
-/**
- *
- * @file RoutingPublisher.java
- * @author wtepfenhart
- * @date: Jun 8, 2018
- * Copyright wtepfenhart (c) 2018
- *
- */
 
 /**
  * @author wtepfenhart
- *
+ *  <p/>
+ * The EchangePublisher class publishes a message (Java String message)
+ * in a rabbitmq exchange. It can be wrapped or extended to allow
+ * controlled construction of formatted messages such as JSON, XML, CSV, or
+ * whatever.
+ * 
+ * <p/>
+ * It opens and closes the connection to rabbitmq for each message that it needs to 
+ * send. This is necessary since leaving the connection open will timeout with 
+ * the result that attempts to send a message will fail when
+ * there are large time delays between messages.
+ * 
+ * <p/>
+ * Made this a thread so that it can operate without blocking any other
+ * functionality of the program. 
+ * 
  */
-public class RoutingPublisher extends Thread{
+public class ExchangePublisher extends Thread{
 	private Configuration configuration;
 	private String exchange;
 	private boolean running;
-	private BlockingQueue<RoutedMessage> queue;
-	
-	private class RoutedMessage {
-		private String route;
-		private String message;
-		
-		public	RoutedMessage(String r, String m) {
-			route=r;
-			message = m;
-		}
-
-		/**
-		 * @return the route
-		 */
-		public String getRoute() {
-			return route;
-		}
-
-		/**
-		 * @param route the route to set
-		 */
-		public void setRoute(String route) {
-			this.route = route;
-		}
-
-		/**
-		 * @return the message
-		 */
-		public String getMessage() {
-			return message;
-		}
-
-		/**
-		 * @param message the message to set
-		 */
-		public void setMessage(String message) {
-			this.message = message;
-		}
-		
-	
-	}
+	private BlockingQueue<String> queue;
 
 	/**
 	 * 
+	 * @param config - this is an object that contains the configuration data
+	 * @param queueName - this is the name of the rabbit queue for publish/subscribe
 	 */
-	public RoutingPublisher(Configuration config, String exch) {
+	public ExchangePublisher(Configuration config, String exch) {
 		configuration = config;
 		exchange = exch;
-		queue = new ArrayBlockingQueue<RoutedMessage>(1024);
+		queue = new ArrayBlockingQueue<String>(1024);
 	}
-
-	
 
 	/**
 	 *
@@ -99,7 +76,7 @@ public class RoutingPublisher extends Thread{
 		}
 		System.out.println("Exiting ExchangePublisher Thread");
 	}
-	
+
 
 	/**
 	 * @param running - the setter to indicated that the thread should be running
@@ -107,28 +84,25 @@ public class RoutingPublisher extends Thread{
 	public void setRunning(boolean running) {
 		this.running = running;
 	}
-	
 
 	/**
 	 * @param message - the message to set for sending
 	 */
-	public void setMessage(String route, String message) {
+	public void setMessage(String message) {
 		try {
-			RoutedMessage rm = new RoutedMessage(route,message);
-			queue.put(rm);
+			queue.put(message);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
-	
-	
+
 
 	/**
 	 * 
 	 * @param msg - parameter for the message to be sent
 	 */
-	public void sendMessage(RoutedMessage msg) {
+	public void sendMessage(String msg) {
 		// TODO Change to returning boolean to indicate success (junit testing)
 		ConnectionFactory factory = new ConnectionFactory();
 		factory.setHost(configuration.getIpAddress());
@@ -139,44 +113,46 @@ public class RoutingPublisher extends Thread{
 			Connection connection = factory.newConnection();
 			Channel channel = connection.createChannel();
 
-			channel.exchangeDeclare(exchange, "direct");
-			channel.basicPublish(exchange, msg.getRoute(), null, msg.getMessage().getBytes("UTF-8"));
-			System.out.println(" [x] Sent " + msg.getRoute() + " Message: " + msg.getMessage());
+			channel.exchangeDeclare(exchange, "fanout");
+			channel.basicPublish(exchange, "", null, msg.getBytes("UTF-8"));
+			//			System.out.println(" [x] Sent '" + msg + "'");
 
 			channel.close();
 			connection.close();
 		}
 		catch (Exception e) {
-			// TODO Add error logging here.
+			// TODO Add error logging here. 
 			//			System.out.println(e);
 		}
 
 	}
 
 	/**
-	 * @param args
+	 * @param argv - command line arguments
+	 * used for debugging and testing the send class code
+	 * 
 	 */
-	public static void main(String[] args) {
-		RoutingPublisher mySender;
-		Configuration config = new Configuration(args);
-		mySender = new RoutingPublisher(config, "Stuff");
+	// TODO replace with junit testing
+	public static void main(String[] argv) throws Exception {
+		ExchangePublisher mySender;
+		Configuration config = new Configuration(argv);
+		mySender = new ExchangePublisher(config, "Control");
 		mySender.start();
-		mySender.setMessage("Test","Hello This is going to fail!");
-		mySender.setMessage("Test", "Second message to send");
+		mySender.setMessage("First");
+
+		mySender = new ExchangePublisher(config, "Intention");
+		mySender.start();
+		mySender.setMessage("Speak");
+		
+		mySender.setMessage("Second message to send");
 		Scanner scanner = new Scanner(System.in);
 		String msg = scanner.nextLine();
-		mySender.setMessage("Log",msg);
+		mySender.setMessage(msg); 
 		msg = scanner.nextLine();
-		mySender.setMessage("Test",msg);
-		try {
-			sleep(10);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		mySender.setMessage(msg);
+		sleep(10);
 		mySender.setRunning(false);
 		scanner.close();
-		// TODO Auto-generated method stub
 		
 	}
 

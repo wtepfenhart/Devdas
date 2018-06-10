@@ -1,6 +1,14 @@
+package devdas;
+/**
+ *
+ * @file ExchangeSubscriber.java
+ * @author wtepfenhart
+ * @date: May 29, 2018
+ * Copyright wtepfenhart (c) 2018
+ * 
+ *
+ */
 import java.io.IOException;
-import java.util.ArrayList;
-
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -9,33 +17,35 @@ import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 
-/**
- *
- * @file RoutingSubscriber.java
- * @author wtepfenhart
- * @date: Jun 9, 2018
- * Copyright wtepfenhart (c) 2018
- *
- */
 
 /**
  * @author wtepfenhart
+ * 
+ * <p/>
+ * This class to be a basic subscriber that is
+ * to be extended by overriding the handleMesssage(msg) method.
+ * The handleDelivery is a pass-through method defined
+ * within an nested autonomous class.
+ * 
  *
  */
-public class RoutingSubscriber {
+public class ExchangeSubscriber{
 	private Configuration configuration;
 	private String exchange;
-	private ArrayList<String> routes;
+
 
 	/**
 	 * 
+	 * @param configuration - configuration object
+	 * @param exchange - the rabbitmq exchange for publish/subscribe
 	 */
-	public RoutingSubscriber(Configuration config, String exch, ArrayList<String> rts) {
+	public ExchangeSubscriber(Configuration config, String exch) {
 		configuration = config;
 		exchange = exch;
-		routes = new ArrayList<String>(rts);
-		this.recieveMessage(exch);
+		this.recieveMessage(exchange);
 	}
+
+
 
 	/**
 	 * 
@@ -51,13 +61,11 @@ public class RoutingSubscriber {
 			Connection connection = factory.newConnection();
 			Channel channel = connection.createChannel();
 
-			channel.exchangeDeclare(exchange, "direct");
+			channel.exchangeDeclare(exch, "fanout");
 			String queueName = channel.queueDeclare().getQueue();
-			for (String rt : routes) {
-				channel.queueBind(queueName, exch, rt);
-			}
+			channel.queueBind(queueName, exch, "");
 
-			System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
+			System.out.println(" [" + exch  + "] " + "\tWaiting for messages.");
 
 			Consumer consumer = new DefaultConsumer(channel) {
 				@Override
@@ -71,28 +79,29 @@ public class RoutingSubscriber {
 		}
 		catch (Exception e) {
 			System.out.println(e);
-			e.printStackTrace(System.out);
 		}
 
 	}
-	
-	public void handleMessage(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, String msg) {
-		String rk = envelope.getRoutingKey();
-		System.out.println("Key: " + rk + "\tMessage: " + msg);
-	}
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		ArrayList<String> rts = new ArrayList<String>();
-		rts.add("Log");
-		rts.add("Test");
-		@SuppressWarnings("unused")
-		RoutingSubscriber myReciever;
-		Configuration config = new Configuration(args);
-		myReciever = new RoutingSubscriber(config, "Stuff", rts);
 
+	/**
+	 * 
+	 * @param message - the message received from rabbitmq
+	 * <p/>
+	 * This method is intended to be overridden for different kinds of messages
+	 */
+	public void handleMessage(String consumerTag, Envelope envelope, AMQP.BasicProperties properties,String message) {
+		System.out.println(" [x] Received '" + consumerTag + " Messsage: " + message + "'");
+	}
+
+	/**
+	 * @param argv - command line arguments
+	 * used for debugging and testing the receive class code
+	 */
+	public static void main(String[] argv) throws Exception {
+		@SuppressWarnings("unused")
+		ExchangeSubscriber myReciever;
+		Configuration config = new Configuration(argv);
+		myReciever = new ExchangeSubscriber(config, "Testing");
 	}
 
 }
