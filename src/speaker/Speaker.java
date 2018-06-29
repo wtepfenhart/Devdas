@@ -6,7 +6,7 @@
  * Copyright wtepfenhart (c) 2018
  *
  */
-package dummy;
+package speaker;
 
 import java.util.ArrayList;
 
