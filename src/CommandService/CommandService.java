@@ -1,4 +1,4 @@
-package devdas;
+package CommandService;
 
 import java.util.Scanner;
 import org.json.simple.JSONObject;
