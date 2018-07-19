@@ -1,4 +1,4 @@
-package CommandService;
+package commandservice;
 
 import java.util.Scanner;
 import org.json.simple.JSONObject;
