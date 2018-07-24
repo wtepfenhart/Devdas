@@ -42,11 +42,11 @@ public class CommandService
         cmdID = String.valueOf(ID);
         ID++;
         
-        src = ((String) j.get("Source")).equals("") ? null : (String) j.get("Source");
-        dest = ((String) j.get("Destination")).equals("") ? null : (String) j.get("Destination");
-        cmd = ((String) j.get("Command")).equals("") ? null : (String) j.get("Command");
-        resp = ((String) j.get("Response")).equals("") ? null : (String) j.get("Response");
-        exp = ((String) j.get("Explanation")).equals("") ? null : (String) j.get("Explanation");
+        src = j.get("Source") == null || ((String) j.get("Source")).equals("") ? null : (String) j.get("Source");
+        dest = j.get("Destination") == null || ((String) j.get("Destination")).equals("") ? null : (String) j.get("Destination");
+        cmd = j.get("Command") == null || ((String) j.get("Command")).equals("") ? null : (String) j.get("Command");
+        resp = j.get("Response") == null || ((String) j.get("Response")).equals("") ? null : (String) j.get("Response");
+        exp = j.get("Explanation") == null || ((String) j.get("Explanation")).equals("") ? null : (String) j.get("Explanation");
     }
     
     /**
@@ -89,6 +89,8 @@ public class CommandService
                     break;
             }
         }
+        
+        scan.close();
     }
     
     @Override
