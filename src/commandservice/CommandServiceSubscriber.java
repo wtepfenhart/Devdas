@@ -18,15 +18,16 @@ public class CommandServiceSubscriber extends ExchangeSubscriber //Are any metho
     @Override
     public void handleMessage(String consumerTag, Envelope envelope, AMQP.BasicProperties properties,String message)
     {
-    	CommandService commander = new CommandService(message);
+    	@SuppressWarnings("deprecation")
+		CommandService cmd = new CommandService(message); //Retains last-used command ID
     	
-    	if(commander.hasCommand())
+    	if(cmd.hasCommand())
     	{
-    		System.out.println(" [x] Received command: " + commander.getCommand());
+    		System.out.println(" [x] Received command: " + cmd.getCommand());
     	}
-    	else if(commander.hasResponse())
+    	else if(cmd.hasResponse())
     	{
-    		System.out.println(" [x] Received response: " + commander.getResponse());
+    		System.out.println(" [x] Received response: " + cmd.getResponse());
     	}
     	else
     	{

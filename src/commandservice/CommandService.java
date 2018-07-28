@@ -43,18 +43,28 @@ public class CommandService
     	exp = null;
     }
     
+    /**
+     * @deprecated Deprecated since this constructor does not increment the class-level variable ID upon creation
+     * and sets its command ID to the current ID value. Use the default constructor {@link #CommandService()} instead.
+     * @param j JSONObject to be read
+     */
+    @Deprecated
     public CommandService(JSONObject j)
     {
         cmdID = String.valueOf(ID);
-        ID++;
         
         this.read(j);
     }
     
+    /**
+     * @deprecated Deprecated since this constructor does not increment the class-level variable ID upon creation
+     * and sets its command ID to the current ID value. Use the default constructor {@link #CommandService()} instead.
+     * @param jsonStr JSON string to be read
+     */
+    @Deprecated
     public CommandService(String jsonStr)
     {
         cmdID = String.valueOf(ID);
-    	ID++;
         
         this.read(jsonStr);
     }
@@ -268,12 +278,14 @@ public class CommandService
         o.put("Destination", "Agent 2");
         System.out.println(o);
         
-        CommandService commander1 = new CommandService(o.toJSONString());
+        CommandService commander1 = new CommandService();
+        commander1.read(o.toJSONString());
         
         o.put("Command", "Start");
         o.put("Response", "");
         o.put("Explanation", "Why?");
-        CommandService commander2 = new CommandService(o);
+        CommandService commander2 = new CommandService();
+        commander2.read(o);
         
         System.out.println("Com1: " + commander1);
         System.out.println("Com2: " + commander2);

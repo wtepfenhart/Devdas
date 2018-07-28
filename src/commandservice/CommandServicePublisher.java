@@ -73,9 +73,12 @@ public class CommandServicePublisher extends Thread //Should this extend Exchang
      */
     public void setMessage(JSONObject msg)
     {
+    	CommandService cmd = new CommandService();
+    	cmd.read(msg);
+    	
     	try
         {
-            queue.put(new CommandService(msg));
+            queue.put(cmd);
         }
         catch (InterruptedException e)
         {
@@ -88,9 +91,12 @@ public class CommandServicePublisher extends Thread //Should this extend Exchang
      */
     public void setMessage(String jsonMsg)
     {
+    	CommandService cmd = new CommandService();
+    	cmd.read(jsonMsg);
+    	
         try
         {
-            queue.put(new CommandService(jsonMsg));
+            queue.put(cmd);
         }
         catch (InterruptedException e)
         {
