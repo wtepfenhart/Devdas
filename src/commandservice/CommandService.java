@@ -31,11 +31,6 @@ public class CommandService
      */
     private String src, dest, cmd, resp, exp;
     
-    public enum Criteria
-    {
-    	SOURCE, DESTINATION, COMMAND, RESPONSE, EXPLANATION
-    }
-    
     public CommandService()
     {
     	cmdID = String.valueOf(ID);
