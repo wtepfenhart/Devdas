@@ -18,7 +18,7 @@ public class CommandServicePublisher extends Thread //Should this extend Exchang
     private Configuration configuration;
     private String exchange;
     private boolean running;
-    private BlockingQueue<CommandService> queue; //What about "queue" from Exchange? Would this queue hide Exchange.queue?
+    private BlockingQueue<CommandService> queue;
     
     public CommandServicePublisher(Configuration config, String exch)
     {
@@ -84,7 +84,7 @@ public class CommandServicePublisher extends Thread //Should this extend Exchang
     }
     
     /**
-     * @param msg the message to set for sending
+     * @param jsonMsg the message to set for sending
      */
     public void setMessage(String jsonMsg)
     {
@@ -96,6 +96,21 @@ public class CommandServicePublisher extends Thread //Should this extend Exchang
         {
             e.printStackTrace();
         }
+    }
+    
+    /**
+     * @param cmd the message object to set for sending
+     */
+    public void setMessage(CommandService cmd)
+    {
+    	try
+    	{
+    		queue.put(cmd);
+    	}
+    	catch(InterruptedException e)
+    	{
+    		e.printStackTrace();
+    	}
     }
     
     /**
@@ -117,7 +132,7 @@ public class CommandServicePublisher extends Thread //Should this extend Exchang
 
             channel.exchangeDeclare(exchange, "fanout");
             channel.basicPublish(exchange, "", null, msg.getBytes("UTF-8"));
-            System.out.println(" [x] Sent '" + msg + "'");
+            System.out.println(" [" + exchange + "] Sent '" + msg + "'");
 
             channel.close();
             connection.close();

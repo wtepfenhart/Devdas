@@ -4,8 +4,6 @@ import java.util.Scanner;
 import org.json.simple.JSONObject;
 
 /**
- * @author B. T. Johnson
- * 
  * Basic message format for system-level messages detailing control commands,
  * such as restart, stop, report, etc, which is used to get individual agents to
  * fulfill system level needs. Can write to a JSON string and read values from a
@@ -13,6 +11,8 @@ import org.json.simple.JSONObject;
  * 
  * Might want to look into using the command pattern for implementing the
  * actions of the commands as appropriate for the individual agent.
+ * 
+ * @author B. T. Johnson
  */
 public class CommandService
 {
@@ -31,18 +31,43 @@ public class CommandService
      */
     private String src, dest, cmd, resp, exp;
     
+    public CommandService()
+    {
+    	cmdID = String.valueOf(ID);
+    	ID++;
+    	
+    	src = null;
+    	dest = null;
+    	cmd = null;
+    	resp = null;
+    	exp = null;
+    }
+    
+    public CommandService(JSONObject j)
+    {
+        cmdID = String.valueOf(ID);
+        ID++;
+        
+        this.read(j);
+    }
+    
+    public CommandService(String jsonStr)
+    {
+        cmdID = String.valueOf(ID);
+        ID++;
+        
+        this.read(jsonStr);
+    }
+    
     /**
      * Reads a JSONObject for each expected key-value mapping. If the value is
      * null or an empty string (""), the value of the parameter is set to null.
      * 
      * @param j JSONObject to be read
      */
-    public CommandService(JSONObject j)
+    public void read(JSONObject j)
     {
-        cmdID = String.valueOf(ID);
-        ID++;
-        
-        src = j.get("Source") == null || ((String) j.get("Source")).equals("") ? null : (String) j.get("Source");
+    	src = j.get("Source") == null || ((String) j.get("Source")).equals("") ? null : (String) j.get("Source");
         dest = j.get("Destination") == null || ((String) j.get("Destination")).equals("") ? null : (String) j.get("Destination");
         cmd = j.get("Command") == null || ((String) j.get("Command")).equals("") ? null : (String) j.get("Command");
         resp = j.get("Response") == null || ((String) j.get("Response")).equals("") ? null : (String) j.get("Response");
@@ -55,42 +80,39 @@ public class CommandService
      * 
      * @param jsonStr JSON string to be read
      */
-    public CommandService(String jsonStr)
+    public void read(String jsonStr)
     {
-        cmdID = String.valueOf(ID);
-        ID++;
-        
-        Scanner scan = new Scanner(jsonStr);
-        scan.useDelimiter("(?:(?<!\")\\p{Punct}+)|(?:\\p{Punct}+(?!\"))"); //Targets any punctuation between the double-quotation character, including the character itself
-        
-        while (scan.hasNext())
-        {
-            String key = scan.next(); //Key retrieved from jsonStr, .next() will yield the value
-            String value = scan.next();
-            
-            switch (key)
-            {
-                case "Source":
-                    src = (value.equals("")) ? null : value;
-                    break;
-                case "Destination":
-                    dest = (value.equals("")) ? null : value;
-                    break;
-                case "Command":
-                    cmd = (value.equals("")) ? null : value;
-                    break;
-                case "Response":
-                    resp = (value.equals("")) ? null : value;
-                    break;
-                case "Explanation":
-                    exp = (value.equals("")) ? null : value;
-                    break;
-                default:
-                    break;
-            }
-        }
-        
-        scan.close();
+    	 Scanner scan = new Scanner(jsonStr);
+         scan.useDelimiter("(?:(?<!\")\\p{Punct}+)|(?:\\p{Punct}+(?!\"))"); //Targets any punctuation between the double-quotation character, including the character itself
+         
+         while (scan.hasNext())
+         {
+             String key = scan.next(); //Key retrieved from jsonStr, .next() will yield the value
+             String value = scan.next();
+             
+             switch (key)
+             {
+                 case "Source":
+                     src = (value.equals("")) ? null : value;
+                     break;
+                 case "Destination":
+                     dest = (value.equals("")) ? null : value;
+                     break;
+                 case "Command":
+                     cmd = (value.equals("")) ? null : value;
+                     break;
+                 case "Response":
+                     resp = (value.equals("")) ? null : value;
+                     break;
+                 case "Explanation":
+                     exp = (value.equals("")) ? null : value;
+                     break;
+                 default:
+                     break;
+             }
+         }
+         
+         scan.close();
     }
     
     @Override
@@ -133,6 +155,16 @@ public class CommandService
     }
     
 ////////////////////////////*SETTERS*////////////////////////////    
+    public void setSource(String src)
+    {
+    	this.src = (src.equals("")) ? null : src;
+    }
+    
+    public void setDestination(String dest)
+    {
+    	this.dest = (dest.equals("")) ? null : dest;
+    }
+    
     public void setResponse(String resp)
     {
         this.resp = (resp.equals("")) ? null : resp;
