@@ -1,10 +1,6 @@
 package commandservice;
 
 import java.util.Scanner;
-
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Envelope;
-
 import devdas.Configuration;
 
 /**
@@ -22,22 +18,7 @@ public class GenericProg
 		String exchange = "Testing";
 		CommandServicePublisher pub = new CommandServicePublisher(config, exchange);
 			@SuppressWarnings("unused")
-		CommandServiceSubscriber sub = new CommandServiceSubscriber(config, exchange)
-			{
-				@Override
-				public void handleMessage(String consumerTag, Envelope envelope, AMQP.BasicProperties properties,String message)
-				{	
-					if (message.contains("Command\":\"Quit"))
-					{
-						System.out.println("Quit");
-						System.exit(0);
-					}
-					else
-					{
-						System.out.println("I\'m sorry, your command cannot be processed yet.");
-					}
-				}
-			};
+		CommandServiceSubscriber sub = new CommandServiceSubscriber(config, exchange);
 		
 		pub.start();
 		
@@ -47,7 +28,6 @@ public class GenericProg
 		System.out.println();
 		
 		//Initialize scanner
-			@SuppressWarnings("resource")
 		Scanner keyboard = new Scanner(System.in);
 		
 		//Test
@@ -85,5 +65,7 @@ public class GenericProg
 			
 			System.out.println("==============");
 		}
+		
+		keyboard.close();
 	}
 }

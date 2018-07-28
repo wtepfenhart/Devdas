@@ -31,6 +31,11 @@ public class CommandService
      */
     private String src, dest, cmd, resp, exp;
     
+    public enum Criteria
+    {
+    	SOURCE, DESTINATION, COMMAND, RESPONSE, EXPLANATION
+    }
+    
     public CommandService()
     {
     	cmdID = String.valueOf(ID);
@@ -54,7 +59,7 @@ public class CommandService
     public CommandService(String jsonStr)
     {
         cmdID = String.valueOf(ID);
-        ID++;
+    	ID++;
         
         this.read(jsonStr);
     }
@@ -67,6 +72,9 @@ public class CommandService
      */
     public void read(JSONObject j)
     {
+    	if (this.hasCommand())
+        	ID++;
+    	
     	src = j.get("Source") == null || ((String) j.get("Source")).equals("") ? null : (String) j.get("Source");
         dest = j.get("Destination") == null || ((String) j.get("Destination")).equals("") ? null : (String) j.get("Destination");
         cmd = j.get("Command") == null || ((String) j.get("Command")).equals("") ? null : (String) j.get("Command");
@@ -90,22 +98,22 @@ public class CommandService
              String key = scan.next(); //Key retrieved from jsonStr, .next() will yield the value
              String value = scan.next();
              
-             switch (key)
+             switch (key.toLowerCase())
              {
-                 case "Source":
-                     src = (value.equals("")) ? null : value;
+                 case "source":
+                     this.setSource(value);
                      break;
-                 case "Destination":
-                     dest = (value.equals("")) ? null : value;
+                 case "destination":
+                     this.setDestination(value);
                      break;
-                 case "Command":
-                     cmd = (value.equals("")) ? null : value;
+                 case "command":
+                	 this.setCommand(value);
                      break;
-                 case "Response":
-                     resp = (value.equals("")) ? null : value;
+                 case "response":
+                     this.setResponse(value);
                      break;
-                 case "Explanation":
-                     exp = (value.equals("")) ? null : value;
+                 case "explanation":
+                     this.setExplanation(value);
                      break;
                  default:
                      break;
@@ -113,6 +121,36 @@ public class CommandService
          }
          
          scan.close();
+    }
+    
+    /**
+     * Reads a string which is set to a specific key for each expected key-value mapping. If the value is
+     * null or an empty string (""), the value of the parameter is set to null.
+     * 
+     * @param jsonStr JSON string to be read
+     */
+    public void read(String key, String value)
+    {
+    	switch (key.toLowerCase())
+    	{
+            case "source":
+                this.setSource(value);
+                break;
+            case "destination":
+                this.setDestination(value);
+                break;
+            case "command":
+           	 this.setCommand(value);
+                break;
+            case "response":
+                this.setResponse(value);
+                break;
+            case "explanation":
+                this.setExplanation(value);
+                break;
+            default:
+                break;
+        }
     }
     
     @Override
@@ -177,6 +215,8 @@ public class CommandService
     
     public void setCommand(String cmd)
     {
+    	if(this.hasCommand())
+    		ID++;
         this.cmd = (cmd.equals("")) ? null : cmd;
     }
     
