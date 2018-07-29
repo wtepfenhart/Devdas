@@ -1,7 +1,8 @@
 package commandservice;
 
-import java.util.Scanner;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 /**
  * Basic message format for system-level messages detailing control commands,
@@ -76,15 +77,12 @@ public class CommandService
      * @param j JSONObject to be read
      */
     public void read(JSONObject j)
-    {
-    	if (this.hasCommand())
-        	ID++;
-    	
-    	src = j.get("Source") == null || ((String) j.get("Source")).equals("") ? null : (String) j.get("Source");
-        dest = j.get("Destination") == null || ((String) j.get("Destination")).equals("") ? null : (String) j.get("Destination");
-        cmd = j.get("Command") == null || ((String) j.get("Command")).equals("") ? null : (String) j.get("Command");
-        resp = j.get("Response") == null || ((String) j.get("Response")).equals("") ? null : (String) j.get("Response");
-        exp = j.get("Explanation") == null || ((String) j.get("Explanation")).equals("") ? null : (String) j.get("Explanation");
+    {	
+    	this.setSource((String) j.get("Source"));
+        this.setDestination((String) j.get("Destination"));
+        this.setCommand((String) j.get("Command"));
+        this.setResponse((String) j.get("Response"));
+        this.setExplanation((String) j.get("Explanation"));
     }
     
     /**
@@ -94,38 +92,27 @@ public class CommandService
      * @param jsonStr JSON string to be read
      */
     public void read(String jsonStr)
-    {
-    	 Scanner scan = new Scanner(jsonStr);
-         scan.useDelimiter("(?:(?<!\")\\p{Punct}+)|(?:\\p{Punct}+(?!\"))"); //Targets any punctuation between the double-quotation character, including the character itself
-         
-         while (scan.hasNext())
-         {
-             String key = scan.next(); //Key retrieved from jsonStr, .next() will yield the value
-             String value = scan.next();
-             
-             switch (key.toLowerCase())
-             {
-                 case "source":
-                     this.setSource(value);
-                     break;
-                 case "destination":
-                     this.setDestination(value);
-                     break;
-                 case "command":
-                	 this.setCommand(value);
-                     break;
-                 case "response":
-                     this.setResponse(value);
-                     break;
-                 case "explanation":
-                     this.setExplanation(value);
-                     break;
-                 default:
-                     break;
-             }
-         }
-         
-         scan.close();
+    {	
+    	JSONParser parser = new JSONParser();
+		Object o = new JSONParser();
+		
+		try
+		{
+			o = parser.parse(jsonStr); //Captures key-value pair in Object o
+		}
+		catch (ParseException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		JSONObject j = (JSONObject) o;
+		
+		this.setSource((String) j.get("Source"));
+        this.setDestination((String) j.get("Destination"));
+        this.setCommand((String) j.get("Command"));
+        this.setResponse((String) j.get("Response"));
+        this.setExplanation((String) j.get("Explanation"));
     }
     
     /**
@@ -145,7 +132,7 @@ public class CommandService
                 this.setDestination(value);
                 break;
             case "command":
-           	 this.setCommand(value);
+            	this.setCommand(value);
                 break;
             case "response":
                 this.setResponse(value);
@@ -161,7 +148,7 @@ public class CommandService
     @Override
     public String toString()
     {
-        return "[CID: " + cmdID + ", Source: " + src + ", Destination: " + dest + ", Command: " + cmd + ", Response: " + resp + ", Explanation: " + exp + "]";
+        return this.toJSONString();
     }
     
     /**
@@ -200,29 +187,29 @@ public class CommandService
 ////////////////////////////*SETTERS*////////////////////////////    
     public void setSource(String src)
     {
-    	this.src = (src.equals("")) ? null : src;
+    	this.src = (src == null || src.equals("")) ? null : src;
     }
     
     public void setDestination(String dest)
     {
-    	this.dest = (dest.equals("")) ? null : dest;
+    	this.dest = (dest == null || dest.equals("")) ? null : dest;
     }
     
     public void setResponse(String resp)
     {
-        this.resp = (resp.equals("")) ? null : resp;
+        this.resp = (resp == null || resp.equals("")) ? null : resp;
     }
     
     public void setExplanation(String exp)
     {
-        this.exp = (exp.equals("")) ? null : exp;
+        this.exp = (exp == null || exp.equals("")) ? null : exp;
     }
     
     public void setCommand(String cmd)
     {
     	if(this.hasCommand())
     		ID++;
-        this.cmd = (cmd.equals("")) ? null : cmd;
+        this.cmd = (cmd == null || cmd.equals("")) ? null : cmd;
     }
     
 ////////////////////////////*GETTERS*////////////////////////////
@@ -284,6 +271,7 @@ public class CommandService
         o.put("Command", "Start");
         o.put("Response", "");
         o.put("Explanation", "Why?");
+        System.out.println(o);
         CommandService commander2 = new CommandService();
         commander2.read(o);
         

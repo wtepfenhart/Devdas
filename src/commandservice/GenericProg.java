@@ -37,7 +37,7 @@ public class GenericProg
 			CommandService commander = new CommandService();
 				commander.setSource("Keyboard");
 				commander.setDestination(exchange);
-				System.out.println("\t" + commander.toJSONString());
+				System.out.println("\tCreated new commander: " + commander.toJSONString());
 				
 			System.out.println("--------------");
 			
