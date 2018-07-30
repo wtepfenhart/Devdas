@@ -19,55 +19,66 @@ public class CommandService
 {
         //Class-level variable
     private static int ID = 0;
-    private final String cmdID;
     
     /**
      * Criteria
      * 
-     * @param src Source identifier
-     * @param dest Destination identifier
-     * @param cmd Command identifier
-     * @param resp Response identifier
-     * @param exp Explanation identifier
+     * @param cmdID Command identifier
+     * @param src Source of command
+     * @param dest Destination of command
+     * @param cmd Command
+     * @param resp Response
+     * @param exp Explanation (if error)
      */
-    private String src, dest, cmd, resp, exp;
+    private String cmdID, src, dest, cmd, resp, exp;
     
     public CommandService()
-    {
-    	cmdID = String.valueOf(ID);
-    	ID++;
-    	
-    	src = null;
-    	dest = null;
-    	cmd = null;
-    	resp = null;
-    	exp = null;
-    }
+    {}
     
     /**
-     * @deprecated Deprecated since this constructor does not increment the class-level variable ID upon creation
-     * and sets its command ID to the current ID value. Use the default constructor {@link #CommandService()} instead.
-     * @param j JSONObject to be read
-     */
-    @Deprecated
-    public CommandService(JSONObject j)
-    {
-        cmdID = String.valueOf(ID);
-        
-        this.read(j);
-    }
-    
-    /**
-     * @deprecated Deprecated since this constructor does not increment the class-level variable ID upon creation
-     * and sets its command ID to the current ID value. Use the default constructor {@link #CommandService()} instead.
+     * @deprecated Deprecated since this constructor does not set nor increment the class-level variable cmdID upon creation.
+     * Use the default constructor {@link #CommandService()} instead.
+     * 
      * @param jsonStr JSON string to be read
      */
     @Deprecated
+    public CommandService(JSONObject j)
+    {   
+    	this.setSource((String) j.get("Source"));
+        this.setDestination((String) j.get("Destination"));
+        this.cmd = (j.get("Command") == null || ((String) j.get("Command")).equals("")) ? null : (String) j.get("Command");
+        this.setResponse((String) j.get("Response"));
+        this.setExplanation((String) j.get("Explanation"));
+    }
+    
+    /**
+     * @deprecated Deprecated since this constructor does not set nor increment the class-level variable cmdID upon creation.
+     * Use the default constructor {@link #CommandService()} instead.
+     * 
+     * @param jsonStr JSON string to be read
+     */
     public CommandService(String jsonStr)
-    {
-        cmdID = String.valueOf(ID);
-        
-        this.read(jsonStr);
+    {   
+    	JSONParser parser = new JSONParser();
+		Object o = new JSONParser();
+		
+		try
+		{
+			o = parser.parse(jsonStr); //Captures key-value pair in Object o
+		}
+		catch (ParseException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		JSONObject j = (JSONObject) o;
+    	
+    	this.setSource((String) j.get("Source"));
+        this.setDestination((String) j.get("Destination"));
+        this.cmd = (j.get("Command") == null || ((String) j.get("Command")).equals("")) ? null : (String) j.get("Command");
+        this.setResponse((String) j.get("Response"));
+        this.setExplanation((String) j.get("Explanation"));
     }
     
     /**
@@ -160,7 +171,8 @@ public class CommandService
      * 
      * @return JSON string
      */
-    public String toJSONString()
+    @SuppressWarnings("unchecked")
+	public String toJSONString()
     {
         JSONObject j = new JSONObject();
         
@@ -206,9 +218,9 @@ public class CommandService
     }
     
     public void setCommand(String cmd)
-    {
-    	if(this.hasCommand())
-    		ID++;
+    {	
+    	this.cmdID = String.valueOf(ID++);
+    	
         this.cmd = (cmd == null || cmd.equals("")) ? null : cmd;
     }
     
@@ -258,7 +270,8 @@ public class CommandService
      * Used for debugging and testing the class code
      */
     // TODO replace with junit testing
-    public static void main(String[] args)
+    @SuppressWarnings("unchecked")
+	public static void main(String[] args)
     {
         JSONObject o = new JSONObject();
         o.put("Source", "Agent 1");
@@ -277,6 +290,10 @@ public class CommandService
         
         System.out.println("Com1: " + commander1);
         System.out.println("Com2: " + commander2);
+        
+        commander1.read(o);
+        
+        System.out.println("After ---> \tCom1: " + commander1);
         
         if(commander1.hasCommand())
         {

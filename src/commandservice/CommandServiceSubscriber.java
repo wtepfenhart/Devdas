@@ -1,9 +1,5 @@
 package commandservice;
 
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Envelope;
 import devdas.Configuration;
@@ -12,39 +8,48 @@ import devdas.ExchangeSubscriber;
 /**
  * @author B-T-Johnson
  */
-public class CommandServiceSubscriber extends ExchangeSubscriber //Are any methods expected to change?
-{   
+public class CommandServiceSubscriber extends ExchangeSubscriber
+{
+	private CommandService cmd;
+	
     public CommandServiceSubscriber(Configuration config, String exch)
     {
         super(config, exch);
     }
- 
-    @Override
+    
+	@SuppressWarnings("deprecation")
+	@Override
     public void handleMessage(String consumerTag, Envelope envelope, AMQP.BasicProperties properties,String message)
-    {
-    	JSONParser parser = new JSONParser();
-		Object o = new JSONParser();
-		
-		try
-		{
-			o = parser.parse(message);
-		}
-		catch (ParseException e)
-		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		JSONObject j = (JSONObject) o;
+    {	
+    	System.out.println(" [x] Received '" + consumerTag + " Messsage: " + message + "'");
+    	
+    	this.cmd = new CommandService(message); //CommandService with no commandID
 		
 		// TODO Command handling
-		if (((String) j.get("Command")).equalsIgnoreCase("quit"))
-		{ 
-			System.err.println("Recieved Quit Message");
-			System.exit(1);
-		}
-		
-		System.err.println(j.get("Source") + "\t" + j.get("Destination") + "\t" + j.get("Command") + "\t" + j.get("Response") + "\t" + j.get("Explanation"));
+    	if(cmd.hasCommand())
+    	{
+    		switch(cmd.getCommand().toLowerCase())
+    		{
+    			case "quit":
+    				System.err.println("Received Quit Message");
+        			cmd.setResponse("Terminate");
+        		default:
+        			cmd.setResponse("Error");
+        			cmd.setExplanation("Unexpected command");		
+    		}
+    	}
+    	else
+    	{
+    		cmd.setResponse("Error");
+    		cmd.setExplanation("No command");
+    	}
+    	
+		System.err.println(cmd.getCommandID() + "\t" + cmd.getSource() + "\t" + cmd.getDestination() + "\t" + cmd.getCommand() + "\t" + cmd.getResponse() + "\t" + cmd.getExplanation());
+    }
+    
+    public String getResponse()
+    {
+    	return cmd.getResponse();
     }
     
     public static void main(String[] args)

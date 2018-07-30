@@ -17,13 +17,11 @@ public class GenericProg
 		Configuration config = new Configuration(args);
 		String exchange = "Testing";
 		CommandServicePublisher pub = new CommandServicePublisher(config, exchange);
-			@SuppressWarnings("unused")
 		CommandServiceSubscriber sub = new CommandServiceSubscriber(config, exchange);
 		
 		pub.start();
 		
 		String command = "";
-		String response = "";
 		
 		System.out.println();
 		
@@ -53,15 +51,12 @@ public class GenericProg
 			
 			System.out.println("--------------");
 			
-			//Ask for response
-			System.out.print("Send a response: ");
-				response = keyboard.nextLine();
-				System.out.println();
+			//Receive response and send
+			System.out.print("Response: ");
+				commander.setResponse(sub.getResponse());
 			
-			//Set response and send
-			commander.setResponse(response);
-				System.out.println("\t" + commander.toJSONString());
-			pub.setMessage(commander);
+			System.out.println("\t" + commander.toJSONString());
+				pub.setMessage(commander);
 			
 			System.out.println("==============");
 		}

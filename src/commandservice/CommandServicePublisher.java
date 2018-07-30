@@ -40,7 +40,7 @@ public class CommandServicePublisher extends Thread //Should this extend Exchang
             {
                 if (queue.size() > 0)
                 {		    			
-                    sendMessage(queue.take().toJSONString());
+                    sendMessage(queue.take());
                 }
                 
                 else
@@ -122,7 +122,7 @@ public class CommandServicePublisher extends Thread //Should this extend Exchang
     /**
      * @param msg - parameter for the message to be sent
      */
-    public void sendMessage(String msg)
+    public void sendMessage(CommandService cmd)
     {
     	// TODO Change to returning boolean to indicate success (junit testing)
     	ConnectionFactory factory = new ConnectionFactory();
@@ -137,8 +137,8 @@ public class CommandServicePublisher extends Thread //Should this extend Exchang
             Channel channel = connection.createChannel();
 
             channel.exchangeDeclare(exchange, "fanout");
-            channel.basicPublish(exchange, "", null, msg.getBytes("UTF-8"));
-            System.out.println(" [" + exchange + "] Sent '" + msg + "'");
+            channel.basicPublish(exchange, "", null, cmd.toJSONString().getBytes("UTF-8"));
+            System.out.println(" [" + exchange + "] Sent '" + cmd + "'");
 
             channel.close();
             connection.close();
@@ -156,7 +156,8 @@ public class CommandServicePublisher extends Thread //Should this extend Exchang
      * Used for debugging and testing the send class code
      */
     // TODO replace with junit testing
-    public static void main(String[] args) throws InterruptedException
+    @SuppressWarnings("unchecked")
+	public static void main(String[] args) throws InterruptedException
     {
         CommandServicePublisher cmdSender;
         Configuration config = new Configuration(args);
