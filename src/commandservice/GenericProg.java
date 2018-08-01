@@ -17,6 +17,7 @@ public class GenericProg
 		Configuration config = new Configuration(args);
 		String exchange = "Testing";
 		CommandServicePublisher pub = new CommandServicePublisher(config, exchange);
+			@SuppressWarnings("unused")
 		CommandServiceSubscriber sub = new CommandServiceSubscriber(config, exchange);
 		
 		pub.start();
@@ -40,7 +41,7 @@ public class GenericProg
 			System.out.println("--------------");
 			
 			//Ask for command
-			System.out.print("Send a command: ");
+			System.out.print("Send a command (-1 to quit): ");
 				command = keyboard.nextLine();
 				System.out.println();
 			
@@ -51,16 +52,23 @@ public class GenericProg
 			
 			System.out.println("--------------");
 			
-			//Receive response and send
-			System.out.print("Response: ");
-				commander.setResponse(sub.getResponse());
+			//Receive response
+			System.out.println("Response:");
 			
-			System.out.println("\t" + commander.toJSONString());
-				pub.setMessage(commander);
+			try
+			{
+				Thread.sleep(1000);
+			}
+			catch (InterruptedException e)
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			
 			System.out.println("==============");
 		}
 		
 		keyboard.close();
+		pub.setRunning(false);
 	}
 }

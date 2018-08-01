@@ -5,7 +5,6 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import devdas.Configuration;
 //import devdas.ExchangePublisher; Should we import ExchangePublisher? Similar code, but different execution...
-import java.util.Scanner;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import org.json.simple.JSONObject;
@@ -179,18 +178,9 @@ public class CommandServicePublisher extends Thread //Should this extend Exchang
         cmdSender.setMessage(speak.toJSONString());
         	speak.put("Explanation", "Second message to send");
         cmdSender.setMessage(speak.toJSONString());
-	
-        //Allow user interaction
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Awaiting new messages from user: ");
-            String msg = "\"Command\":\"" + scanner.nextLine() + "\"";
-        cmdSender.setMessage(msg);
-            msg = "\"Response\":\"" + scanner.nextLine() + "\"";
-        cmdSender.setMessage(msg);
         
         //Terminate
         sleep(10);
         cmdSender.setRunning(false);
-        scanner.close();
     }
 }

@@ -32,53 +32,26 @@ public class CommandService
      */
     private String cmdID, src, dest, cmd, resp, exp;
     
+    /**
+     * Default constructor
+     */
     public CommandService()
     {}
     
     /**
-     * @deprecated Deprecated since this constructor does not set nor increment the class-level variable cmdID upon creation.
-     * Use the default constructor {@link #CommandService()} instead.
-     * 
      * @param jsonStr JSON string to be read
      */
-    @Deprecated
     public CommandService(JSONObject j)
     {   
-    	this.setSource((String) j.get("Source"));
-        this.setDestination((String) j.get("Destination"));
-        this.cmd = (j.get("Command") == null || ((String) j.get("Command")).equals("")) ? null : (String) j.get("Command");
-        this.setResponse((String) j.get("Response"));
-        this.setExplanation((String) j.get("Explanation"));
+    	this.read(j);
     }
     
     /**
-     * @deprecated Deprecated since this constructor does not set nor increment the class-level variable cmdID upon creation.
-     * Use the default constructor {@link #CommandService()} instead.
-     * 
      * @param jsonStr JSON string to be read
      */
     public CommandService(String jsonStr)
     {   
-    	JSONParser parser = new JSONParser();
-		Object o = new JSONParser();
-		
-		try
-		{
-			o = parser.parse(jsonStr); //Captures key-value pair in Object o
-		}
-		catch (ParseException e)
-		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		JSONObject j = (JSONObject) o;
-    	
-    	this.setSource((String) j.get("Source"));
-        this.setDestination((String) j.get("Destination"));
-        this.cmd = (j.get("Command") == null || ((String) j.get("Command")).equals("")) ? null : (String) j.get("Command");
-        this.setResponse((String) j.get("Response"));
-        this.setExplanation((String) j.get("Explanation"));
+    	this.read(jsonStr);
     }
     
     /**
@@ -89,14 +62,15 @@ public class CommandService
      */
     public void read(JSONObject j)
     {	
+    	this.setCommandID((String) j.get("CID"));
     	this.setSource((String) j.get("Source"));
         this.setDestination((String) j.get("Destination"));
-        this.setCommand((String) j.get("Command"));
+        this.cmd = (j.get("Command") == null || ((String) j.get("Command")).equals("")) ? null : (String) j.get("Command");
         this.setResponse((String) j.get("Response"));
         this.setExplanation((String) j.get("Explanation"));
     }
     
-    /**
+	/**
      * Reads a JSON string for each expected key-value mapping. If the value is
      * null or an empty string (""), the value of the parameter is set to null.
      * 
@@ -119,11 +93,7 @@ public class CommandService
 		
 		JSONObject j = (JSONObject) o;
 		
-		this.setSource((String) j.get("Source"));
-        this.setDestination((String) j.get("Destination"));
-        this.setCommand((String) j.get("Command"));
-        this.setResponse((String) j.get("Response"));
-        this.setExplanation((String) j.get("Explanation"));
+		this.read(j);
     }
     
     /**
@@ -131,7 +101,9 @@ public class CommandService
      * null or an empty string (""), the value of the parameter is set to null.
      * 
      * @param jsonStr JSON string to be read
+     * @deprecated Does not set the class-level variable cmdID upon method call. Use {@link #read(JSONObject)} or {@link #read(String)} instead.
      */
+    @Deprecated
     public void read(String key, String value)
     {
     	switch (key.toLowerCase())
@@ -143,7 +115,7 @@ public class CommandService
                 this.setDestination(value);
                 break;
             case "command":
-            	this.setCommand(value);
+            	this.cmd = (value == null || value.equals("")) ? null : value;
                 break;
             case "response":
                 this.setResponse(value);
@@ -196,7 +168,12 @@ public class CommandService
         return !(cmd == null || cmd.equals(""));
     }
     
-////////////////////////////*SETTERS*////////////////////////////    
+////////////////////////////*SETTERS*////////////////////////////
+    private void setCommandID(String cmdID) //Used by .read()
+    {
+		this.cmdID = (cmdID == null || cmdID.equals("")) ? null : cmdID;
+	}
+    
     public void setSource(String src)
     {
     	this.src = (src == null || src.equals("")) ? null : src;
@@ -227,14 +204,16 @@ public class CommandService
 ////////////////////////////*GETTERS*////////////////////////////
     public String getResponse()
     {
-        if (this.hasResponse())
+        if (resp != null)
             return resp;
         return "Nil";
     }
     
     public String getCommandID()
     {
-        return cmdID;
+    	if (cmdID != null)
+            return cmdID;
+        return "Nil";
     }
     
     public String getDestination()
@@ -253,7 +232,7 @@ public class CommandService
     
     public String getCommand()
     {
-        if (this.hasCommand())
+        if (cmd != null)
             return cmd;
         return "Nil";
     }
@@ -291,7 +270,7 @@ public class CommandService
         System.out.println("Com1: " + commander1);
         System.out.println("Com2: " + commander2);
         
-        commander1.read(o);
+        commander1.setCommand("Start");
         
         System.out.println("After ---> \tCom1: " + commander1);
         

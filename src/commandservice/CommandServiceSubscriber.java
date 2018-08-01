@@ -17,13 +17,12 @@ public class CommandServiceSubscriber extends ExchangeSubscriber
         super(config, exch);
     }
     
-	@SuppressWarnings("deprecation")
 	@Override
     public void handleMessage(String consumerTag, Envelope envelope, AMQP.BasicProperties properties,String message)
     {	
     	System.out.println(" [x] Received '" + consumerTag + " Messsage: " + message + "'");
     	
-    	this.cmd = new CommandService(message); //CommandService with no commandID
+    	this.cmd = new CommandService(message);
 		
 		// TODO Command handling
     	if(cmd.hasCommand())
@@ -33,9 +32,11 @@ public class CommandServiceSubscriber extends ExchangeSubscriber
     			case "quit":
     				System.err.println("Received Quit Message");
         			cmd.setResponse("Terminate");
+        			break;
         		default:
         			cmd.setResponse("Error");
-        			cmd.setExplanation("Unexpected command");		
+        			cmd.setExplanation("Unexpected command");
+        			break;
     		}
     	}
     	else
@@ -44,12 +45,7 @@ public class CommandServiceSubscriber extends ExchangeSubscriber
     		cmd.setExplanation("No command");
     	}
     	
-		System.err.println(cmd.getCommandID() + "\t" + cmd.getSource() + "\t" + cmd.getDestination() + "\t" + cmd.getCommand() + "\t" + cmd.getResponse() + "\t" + cmd.getExplanation());
-    }
-    
-    public String getResponse()
-    {
-    	return cmd.getResponse();
+		System.err.println(cmd);
     }
     
     public static void main(String[] args)
