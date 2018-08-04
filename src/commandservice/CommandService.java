@@ -84,16 +84,17 @@ public class CommandService
 		try
 		{
 			o = parser.parse(jsonStr); //Captures key-value pair in Object o
+			
+			JSONObject j = (JSONObject) o;
+			
+			this.read(j);
 		}
 		catch (ParseException e)
 		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.err.println("Unknown message format: " + jsonStr +"\n");
+			System.err.println("Usage:");
+			System.err.println("\t{\"CID\": [commandID], \"Source\": [source], \"Destination\": [destination], \"Command\": [command], \"Response\": [response], \"Explanation\": [explanation]}");
 		}
-		
-		JSONObject j = (JSONObject) o;
-		
-		this.read(j);
     }
     
     /**

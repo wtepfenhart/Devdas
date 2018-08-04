@@ -11,10 +11,12 @@ import devdas.ExchangeSubscriber;
 public class CommandServiceSubscriber extends ExchangeSubscriber
 {
 	private CommandService cmd;
+	private String exchange;
 	
     public CommandServiceSubscriber(Configuration config, String exch)
     {
         super(config, exch);
+        exchange = exch;
     }
     
 	@Override
@@ -25,28 +27,58 @@ public class CommandServiceSubscriber extends ExchangeSubscriber
     	this.cmd = new CommandService(message);
 		
 		// TODO Command handling
-    	if(cmd.hasCommand())
+    	if(!cmd.hasResponse() && cmd.getDestination().equalsIgnoreCase(exchange))
     	{
-    		switch(cmd.getCommand().toLowerCase())
+    		cmd.setDestination(cmd.getSource());
+    		cmd.setSource(exchange);
+    		
+    		if(cmd.hasCommand())
     		{
-    			case "quit":
-    				System.err.println("Received Quit Message");
-        			cmd.setResponse("Terminate");
-        			break;
-        		default:
-        			cmd.setResponse("Error");
-        			cmd.setExplanation("Unexpected command");
-        			break;
+    			switch(cmd.getCommand().toLowerCase())
+    			{
+    				case "quit":
+    					System.err.println("Received Quit Message");
+    					cmd.setResponse("Terminate");
+    					break;
+    				default:
+    					cmd.setResponse("Error");
+    					cmd.setExplanation("Unexpected command");
+    					break;
+    			}
+    		}
+    		else
+        	{
+        		cmd.setResponse("Error");
+        		cmd.setExplanation("No command");
+        	}
+    	}
+    	else if(cmd.hasResponse() && cmd.getSource().equalsIgnoreCase(exchange))
+    	{
+    		cmd.setDestination(cmd.getSource());
+    		cmd.setSource(exchange);
+    		
+    		switch(cmd.getResponse().toLowerCase())
+    		{
+    			case "terminate":
+    				System.err.println("***QUIT***");
+    				System.exit(1);
+    				break;
+    			case "error":
+    				System.err.println("***ERROR***");
+    				break;
+    			default:
+    				System.err.println("***NOTHING***");
+    				break;
     		}
     	}
-    	else
-    	{
-    		cmd.setResponse("Error");
-    		cmd.setExplanation("No command");
-    	}
     	
-		System.err.println(cmd);
+		//System.err.println(cmd);
     }
+	
+	public CommandService getCommand()
+	{
+		return cmd;
+	}
     
     public static void main(String[] args)
     {
