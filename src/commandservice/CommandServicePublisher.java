@@ -22,7 +22,7 @@ public class CommandServicePublisher extends ExchangePublisher
     	CommandService cmd = new CommandService();
     	cmd.read(msg);
     	
-    	this.setMessage(cmd);
+    	super.setMessage(cmd.toJSONString());
     }
     
     /**
@@ -30,7 +30,7 @@ public class CommandServicePublisher extends ExchangePublisher
      */
     public void setMessage(CommandService cmd)
     {
-    	this.setMessage(cmd.toJSONString());
+    	super.setMessage(cmd.toJSONString());
     }
     
     /**
@@ -43,14 +43,6 @@ public class CommandServicePublisher extends ExchangePublisher
     	cmd.read(jsonMsg);
     	
         super.setMessage(cmd.toJSONString());
-    }
-    
-    /**
-     * @param msg - parameter for the message to be sent
-     */
-    public void sendMessage(CommandService cmd)
-    {
-    	this.sendMessage(cmd.toJSONString());
     }
     
     /**

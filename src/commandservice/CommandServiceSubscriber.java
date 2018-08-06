@@ -20,7 +20,7 @@ public class CommandServiceSubscriber extends ExchangeSubscriber
     }
     
 	@Override
-    public void handleMessage(String consumerTag, Envelope envelope, AMQP.BasicProperties properties,String message)
+    public void handleMessage(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, String message)
     {	
     	System.out.println(" [x] Received '" + consumerTag + " Messsage: " + message + "'");
     	
@@ -32,18 +32,23 @@ public class CommandServiceSubscriber extends ExchangeSubscriber
     		cmd.setDestination(cmd.getSource());
     		cmd.setSource(exchange);
     		
+    			//TODO Response & Command handling
     		if(cmd.hasCommand())
-    		{
+    		{	
     			switch(cmd.getCommand().toLowerCase())
     			{
     				case "quit":
     					System.err.println("Received Quit Message");
     					cmd.setResponse("Terminate");
     					break;
+    				case "speak": //How do we allow the user to specify a message they want to speak?
+    					System.err.println("Received Speak Message");
+        				cmd.setResponse("Speak");
+        				break;
     				default:
     					cmd.setResponse("Error");
-    					cmd.setExplanation("Unexpected command");
-    					break;
+        				cmd.setExplanation("Unexpected command");
+        				break;
     			}
     		}
     		else
@@ -63,6 +68,9 @@ public class CommandServiceSubscriber extends ExchangeSubscriber
     				System.err.println("***QUIT***");
     				System.exit(1);
     				break;
+    			case "speak":
+    				System.out.println("Hello World!");
+    				break;
     			case "error":
     				System.err.println("***ERROR***");
     				break;
@@ -71,11 +79,15 @@ public class CommandServiceSubscriber extends ExchangeSubscriber
     				break;
     		}
     	}
+    	else
+    	{
+    		System.err.println("Cannot process message: not enough information given by '" + consumerTag + "'");
+    	}
     	
 		//System.err.println(cmd);
     }
 	
-	public CommandService getCommand()
+	public CommandService getResponse()
 	{
 		return cmd;
 	}

@@ -18,8 +18,6 @@ public class GenericProg
 		CommandServicePublisher pub;
 		CommandServiceSubscriber sub;
 		
-		String command;
-		
 		//Initialize scanner
 			@SuppressWarnings("resource")
 		Scanner keyboard = new Scanner(System.in);
@@ -61,7 +59,7 @@ public class GenericProg
 			
 			//Ask for command
 			System.out.print("Send a command: ");
-				command = keyboard.nextLine();
+				String command = keyboard.nextLine();
 				System.out.println();
 			
 			//Set command and send
@@ -86,8 +84,8 @@ public class GenericProg
 			
 			System.out.println("--------------");
 			
-			System.out.println("Set response");
-				pub.setMessage(sub.getCommand());
+			System.out.println("Command Execution:");
+				pub.setMessage(sub.getResponse());
 			
 			try
 			{
