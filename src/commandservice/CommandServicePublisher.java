@@ -2,6 +2,9 @@ package commandservice;
 
 import devdas.Configuration;
 import devdas.ExchangePublisher;
+
+import java.util.Scanner;
+
 import org.json.simple.JSONObject;
 
 /**
@@ -56,7 +59,7 @@ public class CommandServicePublisher extends ExchangePublisher
     {
         CommandServicePublisher cmdSender;
         Configuration config = new Configuration(args);
-        cmdSender = new CommandServicePublisher(config, "Testing");
+        cmdSender = new CommandServicePublisher(config, "Control");
         
         //Send first command (as JSONObject)
         cmdSender.start();
@@ -65,7 +68,7 @@ public class CommandServicePublisher extends ExchangePublisher
         cmdSender.setMessage(first);
 
         //Change exchange
-        cmdSender = new CommandServicePublisher(config, "Intention");
+        cmdSender = new CommandServicePublisher(config, "Testing");
         cmdSender.start();
         
         //Send second message (as JSON String)
@@ -75,8 +78,18 @@ public class CommandServicePublisher extends ExchangePublisher
         	speak.put("Explanation", "Second message to send");
         cmdSender.setMessage(speak.toJSONString());
         
+        //Allow user interaction
+        Scanner scanner = new Scanner(System.in);
+		CommandService command = new CommandService();
+			command.setCommand(scanner.nextLine());
+			cmdSender.setMessage(command);
+			
+			command.setCommand(scanner.nextLine());
+			cmdSender.setMessage(command);
+        
         //Terminate
         sleep(10);
         cmdSender.setRunning(false);
+        scanner.close();
     }
 }

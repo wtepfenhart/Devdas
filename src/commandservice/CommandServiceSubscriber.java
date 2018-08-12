@@ -10,13 +10,11 @@ import devdas.ExchangeSubscriber;
  */
 public class CommandServiceSubscriber extends ExchangeSubscriber
 {
-	private CommandService cmd;
-	private String exchange;
+	private CommandService msg;
 	
     public CommandServiceSubscriber(Configuration config, String exch)
     {
         super(config, exch);
-        exchange = exch;
     }
     
 	@Override
@@ -24,72 +22,12 @@ public class CommandServiceSubscriber extends ExchangeSubscriber
     {	
     	System.out.println(" [x] Received '" + consumerTag + " Messsage: " + message + "'");
     	
-    	this.cmd = new CommandService(message);
-		
-		// TODO Command handling
-    	if(!cmd.hasResponse() && cmd.getDestination().equalsIgnoreCase(exchange))
-    	{
-    		cmd.setDestination(cmd.getSource());
-    		cmd.setSource(exchange);
-    		
-    			//TODO Response & Command handling
-    		if(cmd.hasCommand())
-    		{	
-    			switch(cmd.getCommand().toLowerCase())
-    			{
-    				case "quit":
-    					System.err.println("Received Quit Message");
-    					cmd.setResponse("Terminate");
-    					break;
-    				case "speak": //How do we allow the user to specify a message they want to speak?
-    					System.err.println("Received Speak Message");
-        				cmd.setResponse("Speak");
-        				break;
-    				default:
-    					cmd.setResponse("Error");
-        				cmd.setExplanation("Unexpected command");
-        				break;
-    			}
-    		}
-    		else
-        	{
-        		cmd.setResponse("Error");
-        		cmd.setExplanation("No command");
-        	}
-    	}
-    	else if(cmd.hasResponse() && cmd.getSource().equalsIgnoreCase(exchange))
-    	{
-    		cmd.setDestination(cmd.getSource());
-    		cmd.setSource(exchange);
-    		
-    		switch(cmd.getResponse().toLowerCase())
-    		{
-    			case "terminate":
-    				System.err.println("***QUIT***");
-    				System.exit(1);
-    				break;
-    			case "speak":
-    				System.out.println("Hello World!");
-    				break;
-    			case "error":
-    				System.err.println("***ERROR***");
-    				break;
-    			default:
-    				System.err.println("***NOTHING***");
-    				break;
-    		}
-    	}
-    	else
-    	{
-    		System.err.println("Cannot process message: not enough information given by '" + consumerTag + "'");
-    	}
-    	
-		//System.err.println(cmd);
+    	msg = new CommandService(message);
     }
 	
-	public CommandService getResponse()
+	public CommandService getMessage()
 	{
-		return cmd;
+		return msg;
 	}
     
     public static void main(String[] args)
