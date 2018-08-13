@@ -15,14 +15,16 @@ import devdas.Configuration;
  */
 public class GenericProg
 {
+		@SuppressWarnings("unused")
 	private Configuration configuration;
+		@SuppressWarnings("unused")
 	private String pubExchange;
 	private String subExchange;
 	private CommandServicePublisher pub;
 	private CommandServiceSubscriber sub;
 	private Map<String, CommandProcessor> systemCommands;
 	
-	public GenericProg(Configuration config, final String pubExchange, final String subExchange)
+	public GenericProg(Configuration config, String pubExchange, String subExchange)
 	{
 		this.configuration = config;
 		this.pubExchange = pubExchange;
@@ -35,56 +37,23 @@ public class GenericProg
 			{
 				super.handleMessage(consumerTag, envelope, properties, message);
 				
-				CommandService msg = getMessage();
-				CommandProcessor com = systemCommands.get(msg.getCommand());
+				Thread programThread = new Thread() //Concurrent thread
+				{
+					@Override
+					public void run()
+					{
+						if(receiveCommand(getMessage()))
+						{
+							GenericProg.this.publish(getMessage());
+						}
+						else
+						{
+							processCommand(getMessage());
+						}
+				    }
+				};
 				
-				// TODO Command handling
-		    	if(!msg.hasResponse() && msg.getDestination().equalsIgnoreCase(subExchange))
-		    	{
-		    		msg.setDestination(msg.getSource());
-		    		msg.setSource(subExchange);
-		    		
-		    		if(msg.hasCommand())
-		    		{	
-		    			switch(msg.getCommand())
-		    			{
-		    				case "Quit":
-		    					msg.setResponse("Terminate");
-		    					break;
-		    				default:
-		    					msg.setResponse("Error");
-		        				msg.setExplanation("Unexpected command");
-		        				break;
-		    			}
-		    		}
-		    		else
-		        	{
-		        		msg.setResponse("Error");
-		        		msg.setExplanation("No command");
-		        	}
-		    	}
-		    	//TODO Response handling
-		    	else if(msg.hasResponse() && msg.getSource().equalsIgnoreCase(subExchange))
-		    	{
-		    		msg.setDestination(msg.getSource());
-		    		msg.setSource(subExchange);
-		    		
-		    		if (com != null)
-					{
-						com.execute();
-					}
-					else
-					{
-						//TODO Error logging
-						System.err.println("No process set to command '" + msg.getCommand() + "'");
-					}
-		    	}
-		    	else
-		    	{
-		    		System.err.println("Cannot process message: not enough information given by '" + consumerTag + "'");
-		    	}
-		    	
-				//System.err.println(msg);
+				programThread.start();
 			}
 		};
 		
@@ -96,19 +65,98 @@ public class GenericProg
 		this(config, "Testing", "Testing");
 	}
 	
-	public void setMessage(CommandService cmd)
+	
+	/**
+	 * Sends a message as a {@link #CommandService} to the exchange set for the program
+	 * 
+	 * @param cmd message to be sent to the exchange
+	 */
+	public void publish(CommandService cmd)
 	{
 		pub.setMessage(cmd);
 	}
 	
-	public CommandService getMessage()
+	/**
+	 * Sends a message as a JSON String to the exchange set for the program
+	 * 
+	 * @param jsonStr message to be sent to the exchange
+	 */
+	public void publish(String jsonStr)
 	{
-		return sub.getMessage();
+		pub.setMessage(jsonStr);
 	}
 	
+	/**
+	 * Sets a {@link #CommandProcessor} as a value to the command key given by the String parameter
+	 * 
+	 * @param command name of the command to be processed
+	 * @param processor name of the CommandProcessor set to the command parameter
+	 */
 	public void setCommand(String command, CommandProcessor processor)
 	{
 		systemCommands.put(command, processor);
+	}
+	
+	/**
+	 * Processes the CommandService object passed to this method for any command that may exist in the object
+	 * 
+	 * @param msg the CommandService that contains the command
+	 * @return Returns whether the command has been processed by the program
+	 */
+	public void processCommand(CommandService msg)
+	{
+		CommandProcessor com = systemCommands.get(sub.getMessage().getCommand());
+		
+		if (com != null)
+		{
+			com.execute(GenericProg.this, sub.getMessage());
+		}
+		else
+		{
+			//TODO Error logging
+			System.err.println("No process set to command '" + sub.getMessage().getCommand() + "'");
+		}
+	}
+	
+	/**
+	 * Observes the CommandService object passed to this method for any command that may exist in the object
+	 * 
+	 * @param msg the CommandService that contains the command
+	 * @return Returns whether the command has been received by the program
+	 */
+	public boolean receiveCommand(CommandService msg)
+	{
+		boolean isReceived = false;
+		
+		// TODO Command handling
+		if(!msg.hasResponse() && msg.getDestination().equalsIgnoreCase(subExchange))
+		{
+			isReceived = true;
+
+			msg.setDestination(msg.getSource());
+			msg.setSource(subExchange);
+
+			if(msg.hasCommand())
+			{	
+				switch(msg.getCommand())
+				{
+				case "Quit":
+					msg.setResponse("Terminate");
+					break;
+				default:
+					msg.setResponse("Error");
+					msg.setExplanation("Unexpected command");
+					break;
+				}
+			}
+			else
+			{
+				msg.setResponse("Error");
+				msg.setExplanation("No command");
+			}
+		}
+		
+		return isReceived;
 	}
 	
 	public static void main(String[] args)
@@ -116,11 +164,30 @@ public class GenericProg
 		Configuration config = new Configuration(args);
 			@SuppressWarnings("resource")
 		Scanner keyboard = new Scanner(System.in);
+			
+		//Ask user for exchanges
+		System.out.print("Name the receiver to use: ");
+			String userSubExchange = keyboard.nextLine();
+		System.out.print("Name the publisher to use: ");
+			String userPubExchange = keyboard.nextLine();
+		
+		System.out.println();
 		
 		//Create generic program
-		GenericProg prog = new GenericProg(config);
+		GenericProg prog = new GenericProg(config, userPubExchange, userSubExchange);
 		
-		//Add quit command
+		//Since program creates a new thread, we can make the current thread sleeps to synchronize the threads (arbitrary, but cleans up the display)
+		try
+		{
+			Thread.sleep(1000);
+		}
+		catch (InterruptedException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		//Add "Quit" command
 		QuitCommandProcessor basicQuit = new QuitCommandProcessor();
 			prog.setCommand("Quit", basicQuit);
 		
@@ -131,8 +198,8 @@ public class GenericProg
 		{		
 			//Initialize message command
 			CommandService commander = new CommandService();
-				commander.setSource("Keyboard");
-				commander.setDestination("Testing");
+				commander.setSource(userSubExchange);
+				commander.setDestination(userPubExchange);
 				
 				System.out.println("\tCreated new commander: " + commander.toJSONString());
 				
@@ -145,55 +212,17 @@ public class GenericProg
 			
 			//Set command and send
 			commander.setCommand(command);
-				System.out.println("\t" + commander.toJSONString());
-			prog.setMessage(commander);
+				System.out.println(" [x] Sent " + commander.toJSONString());
+			prog.publish(commander);
 			
 			System.out.println("--------------");
 			
-			System.out.println("Waiting for response" + "\n");
-			
-			//Since pub creates a new thread, we must make the current thread sleep to synchronize them; TODO Thread with pub
 			try
 			{
 				Thread.sleep(1000);
 			}
 			catch (InterruptedException e)
 			{
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-			while(true)
-			{
-				if(prog.getMessage() != null)
-				{
-					System.out.println("--------------");
-					
-					System.out.println("Processing Command:" + "\n");
-						prog.setMessage(prog.getMessage());
-						break;
-				}
-				else
-				{
-					try
-					{
-						Thread.sleep(10);
-					}
-					catch (InterruptedException e)
-					{
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
-			}
-			
-			try
-			{
-				Thread.sleep(1000);
-			}
-			catch (InterruptedException e)
-			{
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			

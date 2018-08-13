@@ -20,7 +20,7 @@ public class CommandServiceSubscriber extends ExchangeSubscriber
 	@Override
     public void handleMessage(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, String message)
     {	
-    	System.out.println(" [x] Received '" + consumerTag + " Messsage: " + message + "'");
+    	super.handleMessage(consumerTag, envelope, properties, message);
     	
     	msg = new CommandService(message);
     }
