@@ -3,17 +3,18 @@ package commandservice;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Envelope;
 import devdas.Configuration;
 
 /**
- * Simulates the behavior of the CommandService classes by allowing the user to issue commands
- * through the publisher and receiving them synchronously through the receiver.
+ * Generic program that processes commands received by a CommandServiceSubscriber and
+ * sends the results through a CommandServicePublisher.
+ * 
+ * Made this a thread so that it can operate without blocking any other
+ * functionality.
  * 
  * @author B-T-Johnson
  */
-public class GenericProg
+public class GenericProg extends Thread
 {
 		@SuppressWarnings("unused")
 	private Configuration configuration;
@@ -23,6 +24,7 @@ public class GenericProg
 	private CommandServicePublisher pub;
 	private CommandServiceSubscriber sub;
 	private Map<String, CommandProcessor> systemCommands;
+	private boolean isRunning;
 	
 	public GenericProg(Configuration config, String pubExchange, String subExchange)
 	{
@@ -31,33 +33,10 @@ public class GenericProg
 		this.subExchange = subExchange;
 		this.systemCommands = new HashMap<String, CommandProcessor>();
 		this.pub = new CommandServicePublisher(config, pubExchange);
-		this.sub = new CommandServiceSubscriber(config, subExchange)
-		{
-			public void handleMessage(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, String message)
-			{
-				super.handleMessage(consumerTag, envelope, properties, message);
-				
-				Thread programThread = new Thread() //Concurrent thread
-				{
-					@Override
-					public void run()
-					{
-						if(receiveCommand(getMessage()))
-						{
-							GenericProg.this.publish(getMessage());
-						}
-						else
-						{
-							processCommand(getMessage());
-						}
-				    }
-				};
-				
-				programThread.start();
-			}
-		};
+		this.sub = new CommandServiceSubscriber(config, subExchange);
 		
 		pub.start();
+		this.start();
 	}
 	
 	public GenericProg(Configuration config)
@@ -65,6 +44,41 @@ public class GenericProg
 		this(config, "Testing", "Testing");
 	}
 	
+	@Override
+	public void run()
+	{	
+		isRunning = true;
+		
+		while(isRunning)
+		{
+			try
+			{
+				CommandService message = sub.getMessage();
+				
+				if(message != null)
+				{	
+					if(!message.hasResponse() && message.getDestination().equalsIgnoreCase(subExchange))
+					{
+						processCommand(message);
+						publish(message);
+					}
+					
+					message = null;
+				}
+				else
+				{
+					sleep(10);
+				}
+			}
+			catch (InterruptedException e)
+			{
+				currentThread().interrupt();
+				e.printStackTrace();
+			}
+		}
+		
+		System.out.println("Program is no longer running");
+	}
 	
 	/**
 	 * Sends a message as a {@link #CommandService} to the exchange set for the program
@@ -98,85 +112,64 @@ public class GenericProg
 	}
 	
 	/**
-	 * Processes the CommandService object passed to this method for any command that may exist in the object
-	 * 
-	 * @param msg the CommandService that contains the command
-	 * @return Returns whether the command has been processed by the program
-	 */
-	public void processCommand(CommandService msg)
-	{
-		CommandProcessor com = systemCommands.get(sub.getMessage().getCommand());
-		
-		if (com != null)
-		{
-			com.execute(GenericProg.this, sub.getMessage());
-		}
-		else
-		{
-			//TODO Error logging
-			System.err.println("No process set to command '" + sub.getMessage().getCommand() + "'");
-		}
-	}
-	
-	/**
-	 * Observes the CommandService object passed to this method for any command that may exist in the object
+	 * Observes the CommandService object passed to this method for any command that may exist for the object.
+	 * If a command exists and this program can process the command, the command will be processed by the program
+	 * and a success response will be assigned to the CommandService object. Otherwise, no action will be taken,
+	 * and a failure response and explanation will be assigned.
 	 * 
 	 * @param msg the CommandService that contains the command
 	 * @return Returns whether the command has been received by the program
 	 */
-	public boolean receiveCommand(CommandService msg)
+	private void processCommand(CommandService msg)
 	{
-		boolean isReceived = false;
-		
-		// TODO Command handling
-		if(!msg.hasResponse() && msg.getDestination().equalsIgnoreCase(subExchange))
-		{
-			isReceived = true;
+		msg.setDestination(msg.getSource());
+		msg.setSource(subExchange);
 
-			msg.setDestination(msg.getSource());
-			msg.setSource(subExchange);
-
-			if(msg.hasCommand())
-			{	
-				switch(msg.getCommand())
-				{
-				case "Quit":
-					msg.setResponse("Terminate");
-					break;
-				default:
-					msg.setResponse("Error");
-					msg.setExplanation("Unexpected command");
-					break;
-				}
+		if(msg.hasCommand())
+		{	
+			if (systemCommands.get(msg.getCommand()) != null)
+			{
+				msg.setResponse("Success");
+				systemCommands.get(msg.getCommand()).execute(this, msg);
 			}
 			else
 			{
+				//TODO Error logging
 				msg.setResponse("Error");
-				msg.setExplanation("No command");
+				msg.setExplanation("Unexpected command '" + msg.getCommand() + "'");
 			}
 		}
-		
-		return isReceived;
+		else
+		{
+			msg.setResponse("Error");
+			msg.setExplanation("No command");
+		}
+	}
+	
+	public void setRunning(boolean status)
+	{
+		this.isRunning = status;
+	}
+	
+	public boolean isRunning()
+	{
+		return this.isRunning;
 	}
 	
 	public static void main(String[] args)
 	{
+		final Scanner keyboard = new Scanner(System.in);
+		
 		Configuration config = new Configuration(args);
-			@SuppressWarnings("resource")
-		Scanner keyboard = new Scanner(System.in);
+		String source = "Keyboard", destination = "Program";
+		CommandServicePublisher userPub = new CommandServicePublisher(config, destination);
+		CommandServiceSubscriber userSub = new CommandServiceSubscriber(config, source);
+			userPub.start();
 			
-		//Ask user for exchanges
-		System.out.print("Name the receiver to use: ");
-			String userSubExchange = keyboard.nextLine();
-		System.out.print("Name the publisher to use: ");
-			String userPubExchange = keyboard.nextLine();
-		
-		System.out.println();
-		
 		//Create generic program
-		GenericProg prog = new GenericProg(config, userPubExchange, userSubExchange);
+		GenericProg prog = new GenericProg(config, source, destination);
 		
-		//Since program creates a new thread, we can make the current thread sleeps to synchronize the threads (arbitrary, but cleans up the display)
+		//Since program creates a new thread, we can make the current thread sleep to synchronize the threads (arbitrary, but cleans up the display)
 		try
 		{
 			Thread.sleep(1000);
@@ -187,20 +180,28 @@ public class GenericProg
 			e.printStackTrace();
 		}
 		
-		//Add "Quit" command
+		//Add "Quit" command to program
 		QuitCommandProcessor basicQuit = new QuitCommandProcessor();
 			prog.setCommand("Quit", basicQuit);
+		
+		QuitCommandProcessor smartQuit = new QuitCommandProcessor()
+		{
+			public void execute(GenericProg prog, CommandService msg)
+			{
+				prog.setRunning(false);
+			}
+		};
+			prog.setCommand("Safe Quit", smartQuit);
 		
 		System.out.println("==============");
 		
 		//Test
-		while(true)
-		{		
+		while(prog.isRunning())
+		{
 			//Initialize message command
 			CommandService commander = new CommandService();
-				commander.setSource(userSubExchange);
-				commander.setDestination(userPubExchange);
-				
+				commander.setSource(source);
+				commander.setDestination(destination);
 				System.out.println("\tCreated new commander: " + commander.toJSONString());
 				
 			System.out.println("--------------");
@@ -212,8 +213,8 @@ public class GenericProg
 			
 			//Set command and send
 			commander.setCommand(command);
-				System.out.println(" [x] Sent " + commander.toJSONString());
-			prog.publish(commander);
+				System.out.println(" [" + source + "] Sent " + commander.toJSONString());
+			userPub.setMessage(commander);
 			
 			System.out.println("--------------");
 			
@@ -228,5 +229,8 @@ public class GenericProg
 			
 			System.out.println("==============");
 		}
+		
+		keyboard.close();
+		System.exit(1);
 	}
 }
