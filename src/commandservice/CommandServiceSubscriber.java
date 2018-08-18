@@ -10,13 +10,12 @@ import devdas.ExchangeSubscriber;
  */
 public class CommandServiceSubscriber extends ExchangeSubscriber
 {
-	private CommandService msg;
-	private String exchange;
+	private CommandServiceMessage msg;
+	private CommandServiceMessage tempMsg;
 	
     public CommandServiceSubscriber(Configuration config, String exch)
     {
         super(config, exch);
-        this.exchange = exch;
     }
     
 	@Override
@@ -24,16 +23,17 @@ public class CommandServiceSubscriber extends ExchangeSubscriber
     {	
     	super.handleMessage(consumerTag, envelope, properties, message);
     	
-    	this.msg = new CommandService(message);
+    	this.msg = new CommandServiceMessage(message);
+    	this.tempMsg = msg;
 
-    	if (msg.hasResponse() && msg.getDestination().equalsIgnoreCase(exchange))
+    	if (msg.hasResponse() && msg.getDestination().equalsIgnoreCase(this.toString()))
     	{
     		//TODO Response handling
     		switch (msg.getResponse())
     		{
-				case "Error":
+				case "Failure":
 					System.err.println("***FAILURE***");
-					System.err.println("Could not execute command " + msg.getCommandID() + " because '" + msg.getExplanation());
+					System.err.println("Could not execute command " + msg.getCommandID() + " because '" + msg.getExplanation() + "'");
 					break;
 				case "Success":
 					System.err.println("***SUCCESS***");
@@ -46,15 +46,20 @@ public class CommandServiceSubscriber extends ExchangeSubscriber
     }
 	
 	/**
-	 * Retrieves the message from the subscriber, then destroys the message afterwards
+	 * Retrieves a temporary instance of the message from the subscriber, then destroys the instance afterwards
 	 * 
 	 * @return Returns the message as a CommandService object
 	 */
-	public CommandService getMessage()
+	public CommandServiceMessage consumeMessage()
 	{
-		CommandService temp = msg;
-		msg = null;
+		CommandServiceMessage temp = tempMsg;
+		tempMsg = null;
 		return temp;
+	}
+	
+	public CommandServiceMessage getMessage()
+	{
+		return msg;
 	}
     
     public static void main(String[] args)

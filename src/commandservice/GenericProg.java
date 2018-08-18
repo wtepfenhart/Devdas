@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 import devdas.Configuration;
+import devdas.LogPublisher;
+import devdas.LogSubscriber;
 
 /**
  * Generic program that processes commands received by a CommandServiceSubscriber and
@@ -19,11 +21,12 @@ public class GenericProg extends Thread
 		@SuppressWarnings("unused")
 	private Configuration configuration;
 		@SuppressWarnings("unused")
-	private String pubExchange;
-	private String subExchange;
+	private String pubExchange, subExchange;
 	private CommandServicePublisher pub;
 	private CommandServiceSubscriber sub;
-	private Map<String, CommandProcessor> systemCommands;
+	private LogPublisher logger;
+	private Map<String, SystemCommandProcessor> systemCommands; //System-wide commands like "Quit", "Start", "Status", "Pause"
+	private Map<String, CommandProcessor> operationCommands; //Individual functions/behaviors
 	private boolean isRunning;
 	
 	public GenericProg(Configuration config, String pubExchange, String subExchange)
@@ -31,17 +34,34 @@ public class GenericProg extends Thread
 		this.configuration = config;
 		this.pubExchange = pubExchange;
 		this.subExchange = subExchange;
-		this.systemCommands = new HashMap<String, CommandProcessor>();
+		this.systemCommands = new HashMap<String, SystemCommandProcessor>();
+			this.setSystemCommand("Quit", new QuitCommandProcessor(this));
+			this.setSystemCommand("Status", new StatusCommandProcessor(this));
+			//Other system commands; Start (need to fix run() then), Pause (or is that an operational command?), Log ("Log" what? Some parameter?), etc.
+		this.operationCommands = new HashMap<String, CommandProcessor>(); //Intentionally left blank by default
+																		  //Probably should change to OperationCommandProcessor to be more explicit
 		this.pub = new CommandServicePublisher(config, pubExchange);
 		this.sub = new CommandServiceSubscriber(config, subExchange);
+		this.logger = new LogPublisher(config, "Logging"); //TODO Use config.getLogExchange()
 		
 		pub.start();
+		logger.start();
 		this.start();
 	}
 	
 	public GenericProg(Configuration config)
 	{
-		this(config, "Testing", "Testing");
+		this(config, config.getExchange(), "Operation"); //TODO Use config.getOperationExchange()
+	}
+	
+	public GenericProg(Configuration config, String[] commands, CommandProcessor[] processors)
+	{
+		this(config);
+		
+		for (int i = 0; i < commands.length && i < processors.length; i++) //TODO Check "off-by-one"
+		{
+			this.setOperationCommand(commands[i], processors[i]);
+		}
 	}
 	
 	@Override
@@ -49,18 +69,22 @@ public class GenericProg extends Thread
 	{	
 		isRunning = true;
 		
+		logger.sendLogMessage("Start", "Started GenericProg", "Info");
+		
 		while(isRunning)
 		{
 			try
 			{
-				CommandService message = sub.getMessage();
+				CommandServiceMessage message = sub.consumeMessage();
 				
 				if(message != null)
 				{	
-					if(!message.hasResponse() && message.getDestination().equalsIgnoreCase(subExchange))
+					if(!message.hasResponse() && message.getDestination().equalsIgnoreCase(this.toString()))
 					{
 						processCommand(message);
-						publish(message);
+						pub.setMessage(message);
+						//TODO Error logging
+						logger.sendLogMessage(message.getResponse().equals("Failure") ? "Error" : "Success", message.getExplanation(), message.getResponse().equals("Failure") ? "High" : "Info");
 					}
 					
 					message = null;
@@ -81,34 +105,25 @@ public class GenericProg extends Thread
 	}
 	
 	/**
-	 * Sends a message as a {@link #CommandService} to the exchange set for the program
-	 * 
-	 * @param cmd message to be sent to the exchange
-	 */
-	public void publish(CommandService cmd)
-	{
-		pub.setMessage(cmd);
-	}
-	
-	/**
-	 * Sends a message as a JSON String to the exchange set for the program
-	 * 
-	 * @param jsonStr message to be sent to the exchange
-	 */
-	public void publish(String jsonStr)
-	{
-		pub.setMessage(jsonStr);
-	}
-	
-	/**
-	 * Sets a {@link #CommandProcessor} as a value to the command key given by the String parameter
+	 * Sets a {@link #CommandProcessor} as a value in the system commands to the command key given by the String parameter
 	 * 
 	 * @param command name of the command to be processed
 	 * @param processor name of the CommandProcessor set to the command parameter
 	 */
-	public void setCommand(String command, CommandProcessor processor)
+	public void setSystemCommand(String command, SystemCommandProcessor processor)
 	{
 		systemCommands.put(command, processor);
+	}
+	
+	/**
+	 * Sets a {@link #CommandProcessor} as a value in the operation commands to the command key given by the String parameter
+	 * 
+	 * @param command name of the command to be processed
+	 * @param processor name of the CommandProcessor set to the command parameter
+	 */
+	public void setOperationCommand(String command, CommandProcessor processor)
+	{
+		operationCommands.put(command, processor);
 	}
 	
 	/**
@@ -120,35 +135,37 @@ public class GenericProg extends Thread
 	 * @param msg the CommandService that contains the command
 	 * @return Returns whether the command has been received by the program
 	 */
-	private void processCommand(CommandService msg)
+	private void processCommand(CommandServiceMessage msg)
 	{
 		msg.setDestination(msg.getSource());
-		msg.setSource(subExchange);
+		msg.setSource(this.toString());
 
 		if(msg.hasCommand())
-		{	
-			if (systemCommands.get(msg.getCommand()) != null)
+		{
+			if (systemCommands.get(msg.getCommand()) != null) //System commands should have priority over operation commands
 			{
-				msg.setResponse("Success");
-				systemCommands.get(msg.getCommand()).execute(this, msg);
+				systemCommands.get(msg.getCommand()).execute(msg);
+			}
+			else if(operationCommands.get(msg.getCommand()) != null)
+			{
+				operationCommands.get(msg.getCommand()).execute(msg);
 			}
 			else
 			{
-				//TODO Error logging
-				msg.setResponse("Error");
-				msg.setExplanation("Unexpected command '" + msg.getCommand() + "'");
+				msg.setResponse("Failure");
+				msg.setExplanation("Unexpected command: " + msg.getCommand());
 			}
 		}
 		else
 		{
-			msg.setResponse("Error");
+			msg.setResponse("Failure");
 			msg.setExplanation("No command");
 		}
 	}
 	
-	public void setRunning(boolean status)
+	public void setRunning(boolean state)
 	{
-		this.isRunning = status;
+		this.isRunning = state;
 	}
 	
 	public boolean isRunning()
@@ -159,11 +176,13 @@ public class GenericProg extends Thread
 	public static void main(String[] args)
 	{
 		final Scanner keyboard = new Scanner(System.in);
+		String source = "Keyboard", destination = "Program";
 		
 		Configuration config = new Configuration(args);
-		String source = "Keyboard", destination = "Program";
 		CommandServicePublisher userPub = new CommandServicePublisher(config, destination);
 		CommandServiceSubscriber userSub = new CommandServiceSubscriber(config, source);
+			@SuppressWarnings("unused")
+		LogSubscriber logger = new LogSubscriber(config, "Logging");
 			userPub.start();
 			
 		//Create generic program
@@ -180,28 +199,15 @@ public class GenericProg extends Thread
 			e.printStackTrace();
 		}
 		
-		//Add "Quit" command to program
-		QuitCommandProcessor basicQuit = new QuitCommandProcessor();
-			prog.setCommand("Quit", basicQuit);
-		
-		QuitCommandProcessor smartQuit = new QuitCommandProcessor()
-		{
-			public void execute(GenericProg prog, CommandService msg)
-			{
-				prog.setRunning(false);
-			}
-		};
-			prog.setCommand("Safe Quit", smartQuit);
-		
 		System.out.println("==============");
 		
 		//Test
 		while(prog.isRunning())
 		{
 			//Initialize message command
-			CommandService commander = new CommandService();
-				commander.setSource(source);
-				commander.setDestination(destination);
+			CommandServiceMessage commander = new CommandServiceMessage();
+				commander.setSource(userSub.toString());
+				commander.setDestination(prog.toString());
 				System.out.println("\tCreated new commander: " + commander.toJSONString());
 				
 			System.out.println("--------------");

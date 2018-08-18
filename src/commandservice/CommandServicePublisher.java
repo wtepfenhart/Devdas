@@ -22,7 +22,7 @@ public class CommandServicePublisher extends ExchangePublisher
      */
     public void setMessage(JSONObject msg)
     {
-    	CommandService cmd = new CommandService();
+    	CommandServiceMessage cmd = new CommandServiceMessage();
     	cmd.read(msg);
     	
     	super.setMessage(cmd.toJSONString());
@@ -31,7 +31,7 @@ public class CommandServicePublisher extends ExchangePublisher
     /**
      * @param cmd the CommandService object to set for sending
      */
-    public void setMessage(CommandService cmd)
+    public void setMessage(CommandServiceMessage cmd)
     {
     	super.setMessage(cmd.toJSONString());
     }
@@ -42,7 +42,7 @@ public class CommandServicePublisher extends ExchangePublisher
     @Override
     public void setMessage(String jsonMsg)
     {
-    	CommandService cmd = new CommandService();
+    	CommandServiceMessage cmd = new CommandServiceMessage();
     	cmd.read(jsonMsg);
     	
         super.setMessage(cmd.toJSONString());
@@ -80,7 +80,7 @@ public class CommandServicePublisher extends ExchangePublisher
         
         //Allow user interaction
         Scanner scanner = new Scanner(System.in);
-		CommandService command = new CommandService();
+		CommandServiceMessage command = new CommandServiceMessage();
 			command.setCommand(scanner.nextLine());
 			cmdSender.setMessage(command);
 			

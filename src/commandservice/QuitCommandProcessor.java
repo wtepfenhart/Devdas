@@ -1,10 +1,16 @@
 package commandservice;
 
-public class QuitCommandProcessor implements CommandProcessor
-{
-	@Override
-	public void execute(GenericProg program, CommandService command)
+public class QuitCommandProcessor extends SystemCommandProcessor
+{	
+	public QuitCommandProcessor(GenericProg prog)
 	{
-		System.exit(1);
+		super(prog);
+	}
+	
+	public void execute(CommandServiceMessage command)
+	{
+		command.setResponse("Success");
+		command.setExplanation("Received Quit Command");
+		prog.setRunning(false);
 	}
 }

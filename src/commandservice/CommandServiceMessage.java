@@ -15,7 +15,7 @@ import org.json.simple.parser.ParseException;
  * 
  * @author B. T. Johnson
  */
-public class CommandService
+public class CommandServiceMessage
 {
         //Class-level variable
     private static int ID = 0;
@@ -35,13 +35,13 @@ public class CommandService
     /**
      * Default constructor
      */
-    public CommandService()
+    public CommandServiceMessage()
     {}
     
     /**
-     * @param jsonStr JSON string to be read
+     * @param JSONObject JSON object to be read
      */
-    public CommandService(JSONObject j)
+    public CommandServiceMessage(JSONObject j)
     {   
     	this.read(j);
     }
@@ -49,7 +49,7 @@ public class CommandService
     /**
      * @param jsonStr JSON string to be read
      */
-    public CommandService(String jsonStr)
+    public CommandServiceMessage(String jsonStr)
     {   
     	this.read(jsonStr);
     }
@@ -258,14 +258,14 @@ public class CommandService
         o.put("Destination", "Agent 2");
         System.out.println(o);
         
-        CommandService commander1 = new CommandService();
+        CommandServiceMessage commander1 = new CommandServiceMessage();
         commander1.read(o.toJSONString());
         
         o.put("Command", "Start");
         o.put("Response", "");
         o.put("Explanation", "Why?");
         System.out.println(o);
-        CommandService commander2 = new CommandService();
+        CommandServiceMessage commander2 = new CommandServiceMessage();
         commander2.read(o);
         
         System.out.println("Com1: " + commander1);
