@@ -1,16 +1,11 @@
 package commandservice;
 
-public class QuitCommandProcessor extends SystemCommandProcessor
-{	
-	public QuitCommandProcessor(GenericProg prog)
-	{
-		super(prog);
-	}
-	
-	public void execute(CommandServiceMessage command)
+public class QuitCommandProcessor implements CommandProcessor
+{
+	public void execute(GenericProg prog, CommandServiceMessage command)
 	{
 		command.setResponse("Success");
-		command.setExplanation("Received Quit Command");
+		command.setExplanation("Received Quit Command"); //Probably should remove
 		prog.setRunning(false);
 	}
 }

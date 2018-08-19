@@ -25,33 +25,48 @@ public class GenericProg extends Thread
 	private CommandServicePublisher pub;
 	private CommandServiceSubscriber sub;
 	private LogPublisher logger;
-	private Map<String, SystemCommandProcessor> systemCommands; //System-wide commands like "Quit", "Start", "Status", "Pause"
+	private Map<String, CommandProcessor> systemCommands; //System-wide commands like "Quit", "Start", "Status", "Pause"
 	private Map<String, CommandProcessor> operationCommands; //Individual functions/behaviors
 	private boolean isRunning;
+	private boolean isOperational;
 	
+	/**
+	 * Creates a new Generic Program set by the Configuration object, and allows the ability to set the Publisher and Subscriber to specific exchanges 
+	 * 
+	 * @param config Configuration object to set
+	 * @param pubExchange Exchange for the Publisher
+	 * @param subExchange Exchange for the Subscriber
+	 */
 	public GenericProg(Configuration config, String pubExchange, String subExchange)
 	{
 		this.configuration = config;
 		this.pubExchange = pubExchange;
 		this.subExchange = subExchange;
-		this.systemCommands = new HashMap<String, SystemCommandProcessor>();
-			this.setSystemCommand("Quit", new QuitCommandProcessor(this));
-			this.setSystemCommand("Status", new StatusCommandProcessor(this));
-			//Other system commands; Start (need to fix run() then), Pause (or is that an operational command?), Log ("Log" what? Some parameter?), etc.
+		this.systemCommands = new HashMap<String, CommandProcessor>();
+			this.setSystemCommand("Quit", new QuitCommandProcessor());
+			this.setSystemCommand("Exit", new ExitCommandProcessor());
+			this.setSystemCommand("Status", new StatusCommandProcessor());
+			this.setSystemCommand("Start", new StartCommandProcessor());
+		//	this.setSystemCommand("Pause", new PauseCommandProcessor(this));
+			//TODO Other system commands
 		this.operationCommands = new HashMap<String, CommandProcessor>(); //Intentionally left blank by default
-																		  //Probably should change to OperationCommandProcessor to be more explicit
 		this.pub = new CommandServicePublisher(config, pubExchange);
 		this.sub = new CommandServiceSubscriber(config, subExchange);
-		this.logger = new LogPublisher(config, "Logging"); //TODO Use config.getLogExchange()
+		this.logger = new LogPublisher(config, config.getLogExchange());
 		
 		pub.start();
 		logger.start();
 		this.start();
 	}
 	
+	/**
+	 * Creates a new Generic Program set by the Configuration object
+	 * 
+	 * @param config Configuration object to set
+	 */
 	public GenericProg(Configuration config)
 	{
-		this(config, config.getExchange(), "Operation"); //TODO Use config.getOperationExchange()
+		this(config, config.getExchange(), config.getOperationExchange());
 	}
 	
 	public GenericProg(Configuration config, String[] commands, CommandProcessor[] processors)
@@ -110,7 +125,7 @@ public class GenericProg extends Thread
 	 * @param command name of the command to be processed
 	 * @param processor name of the CommandProcessor set to the command parameter
 	 */
-	public void setSystemCommand(String command, SystemCommandProcessor processor)
+	public void setSystemCommand(String command, CommandProcessor processor)
 	{
 		systemCommands.put(command, processor);
 	}
@@ -144,11 +159,11 @@ public class GenericProg extends Thread
 		{
 			if (systemCommands.get(msg.getCommand()) != null) //System commands should have priority over operation commands
 			{
-				systemCommands.get(msg.getCommand()).execute(msg);
+				systemCommands.get(msg.getCommand()).execute(this, msg);
 			}
-			else if(operationCommands.get(msg.getCommand()) != null)
+			else if(isOperational == true && operationCommands.get(msg.getCommand()) != null)
 			{
-				operationCommands.get(msg.getCommand()).execute(msg);
+				operationCommands.get(msg.getCommand()).execute(this, msg);
 			}
 			else
 			{
@@ -171,6 +186,16 @@ public class GenericProg extends Thread
 	public boolean isRunning()
 	{
 		return this.isRunning;
+	}
+	
+	public void setOperational(boolean state)
+	{
+		this.isOperational = state;
+	}
+	
+	public boolean isOperational()
+	{
+		return this.isOperational;
 	}
 	
 	public static void main(String[] args)

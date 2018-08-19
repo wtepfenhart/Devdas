@@ -8,5 +8,5 @@ package commandservice;
 
 public interface CommandProcessor
 {	
-	public void execute(CommandServiceMessage command);
+	public void execute(GenericProg program, CommandServiceMessage command);
 }

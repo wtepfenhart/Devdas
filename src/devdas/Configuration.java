@@ -33,6 +33,15 @@ import java.util.Properties;
  * </ul>
  * More to be added at a later time
  * 
+ *<p/>
+ * 
+ * @author B-T-Johnson
+ * <p/> Added the command line arguments:
+ * <ul style="list-style-type :none">
+ * <li> -le Log Exchange </li>
+ * <li> -se System Exchange </li>
+ * <li> -oe Operation Exchange </li>
+ * </ul>
  */
 public class Configuration {
 	private String ipAddress;
@@ -40,6 +49,9 @@ public class Configuration {
 	private String userPassword;
 	private String virtualHost;
 	private String exchange;
+	private String logExchange;
+	private String systemExchange;
+	private String operationExchange;
 
 	/**
 	 * @return the ipAddress - the IP Address of the rabbitmq server
@@ -110,7 +122,49 @@ public class Configuration {
 	public void setExchange(String exchange) {
 		this.exchange = exchange;
 	}
+	
+	/**
+	 * @return the log exchange
+	 */
+	public String getLogExchange() {
+		return logExchange;
+	}
+	
+	/**
+	 * @param logExchange the log exchange to set
+	 */
+	public void setLogExchange(String logExchange) {
+		this.logExchange = logExchange;
+	}
+	
+	/**
+	 * @return the log exchange
+	 */
+	public String getSystemExchange() {
+		return systemExchange;
+	}
 
+	/**
+	 * @param systemExchange the system exchange to set
+	 */
+	public void setSystemExchange(String systemExchange) {
+		this.systemExchange = systemExchange;
+	}
+	
+	/**
+	 * @return the operation exchange
+	 */
+	public String getOperationExchange() {
+		return operationExchange;
+	}
+	
+	/**
+	 * @param operationExchange the operation exchange to set
+	 */
+	public void setOperationExchange(String operationExchange) {
+		this.operationExchange = operationExchange;
+	}
+	
 	/**
 	 * @param args - command line arguments
 	 */
@@ -127,6 +181,9 @@ public class Configuration {
 			userPassword = p.getProperty("userPassword");
 			virtualHost = p.getProperty("virtualHost");
 			exchange = p.getProperty("exchange");
+			logExchange = p.getProperty("logExchange");
+			systemExchange = p.getProperty("systemExchange");
+			operationExchange = p.getProperty("operationExchange");
 		}
 		catch (Exception e) {
 			System.out.println(e);
@@ -156,10 +213,22 @@ public class Configuration {
 				exchange = cmd.valueOf("-e");
 				i++;
 				break;
+			case "-le":
+				logExchange = cmd.valueOf("-le");
+				i++;
+				break;
+			case "-se":
+				systemExchange = cmd.valueOf("-se");
+				i++;
+				break;
+			case "-oe":
+				operationExchange = cmd.valueOf("-oe");
+				i++;
+				break;
 			default:
 				System.out.println("Unknown argument: " + args[i] +"\n");
 				System.out.println("Usage:");
-				System.out.println("\tDevDasMain [-i address] [-u username] [-p password] [-v virtualhost] [-e exchange]");
+				System.out.println("\tDevDasMain [-i address] [-u username] [-p password] [-v virtualhost] [-e exchange] [-le logexchange] [-se systemexchange] [-oe operationexchange]");
 				System.exit(0);
 				break;		
 
