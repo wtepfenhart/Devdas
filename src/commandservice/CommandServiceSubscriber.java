@@ -32,14 +32,15 @@ public class CommandServiceSubscriber extends ExchangeSubscriber
     		switch (msg.getResponse())
     		{
 				case "Failure":
-					System.err.println("***FAILURE***");
-					System.err.println("Could not execute command " + msg.getCommandID() + " because '" + msg.getExplanation() + "'");
+					System.out.println("***FAILURE***");
+					System.out.println("Could not execute command " + msg.getCommandID() + " because '" + msg.getExplanation() + "'");
 					break;
 				case "Success":
-					System.err.println("***SUCCESS***");
+					System.out.println("***SUCCESS***");
+					System.out.println(msg.getExplanation());
 					break;
 				default:
-					System.err.println("Unknown Response");
+					System.out.println("Unknown Response"); //Should we throw an error here instead?
 					break;
     		}
     	}

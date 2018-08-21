@@ -36,7 +36,9 @@ public class CommandServiceMessage
      * Default constructor
      */
     public CommandServiceMessage()
-    {}
+    {
+    	this.cmdID = String.valueOf(ID++);
+    }
     
     /**
      * @param JSONObject JSON object to be read
@@ -197,7 +199,10 @@ public class CommandServiceMessage
     
     public void setCommand(String cmd)
     {	
-    	this.cmdID = String.valueOf(ID++);
+    	if (!(cmd == null || cmd.equals("")))
+    	{
+    		this.cmdID = String.valueOf(ID++);
+    	}
     	
         this.cmd = (cmd == null || cmd.equals("")) ? null : cmd;
     }

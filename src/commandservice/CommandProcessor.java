@@ -1,7 +1,8 @@
 package commandservice;
 
 /**
- * Generic interface for commands issued by any CommandService object. All commands should implement this interface.
+ * Generic interface for processing commands issued by any CommandService message. All commands issued to a GenericProg should implement this interface.
+ * When processing commands, a CommandProcessor should determine if the command is successful and return an appropriate response and explanation.
  * 
  * @author B-T-Johnson
  */
