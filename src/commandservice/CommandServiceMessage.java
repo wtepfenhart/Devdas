@@ -199,12 +199,19 @@ public class CommandServiceMessage
     
     public void setCommand(String cmd)
     {	
-    	if (!(cmd == null || cmd.equals("")))
+    	if (cmd == null || cmd.equals(""))
     	{
-    		this.cmdID = String.valueOf(ID++);
+    		this.cmd = null;
     	}
-    	
-        this.cmd = (cmd == null || cmd.equals("")) ? null : cmd;
+    	else
+    	{
+    		if (this.cmd != null)
+    		{
+    			this.cmdID = String.valueOf(ID++);
+    		}
+    		
+    		this.cmd = cmd;
+    	}
     }
     
 ////////////////////////////*GETTERS*////////////////////////////

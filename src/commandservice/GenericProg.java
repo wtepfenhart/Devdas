@@ -9,23 +9,25 @@ import devdas.LogSubscriber;
 
 /**
  * Generic program that processes commands received by a CommandServiceSubscriber and
- * sends the results through a CommandServicePublisher. The results of a command may be simple display of a variable's value or another command itself.
+ * sends the results through a CommandServicePublisher.
  * 
- * Made this a thread so that it can operate without blocking any other
+ * The results of a command may be a simple display of a variable's value or another command itself.
+ * 
+ * Made this implement the Runnable interface so that it can operate without blocking any other
  * functionality.
  * 
  * @author B-T-Johnson
  */
-//TODO Operation command processing; allow operation commands to issue commands to other programs (when needed)
 /*
  * ***MAJOR QUESTIONS***
- * Should this functionality be done within this class, or within the individual command processor object (since only the processor will know with whom it needs to talk)?
- * Should these type of processors change the destination when it need to do so? (this requires a standard exchange for programs, which is the "Operation" exchange)
- * How will it know who to talk to/what command to issue? (a static Registry within commandProcessor interface?)
+ * Should operations be done within this class, or within the individual command processor object (who will know with whom it needs to talk)?
+ * Should operation processors change the destination when it need to talk to other programs (this requires a standard exchange for programs, which is the "Operation" exchange)?
+ * How will it know who to talk to/what command to issue? (a static Registry within commandProcessor interface, or do all programs subscribe to a registry?)
  * Do system commands have this functionality (i.e., should one program tell another to start or stop)? Is this the significant difference between system/operation commands?
  * Will operation commands ever deal with the program directly (i.e., make changes to the behaviors of the program as a whole)? If not, should we change the execute() method and create a new abstract class to distinguish the two types of processors?
+ * How should a command have multiple parameters (i.e., a "Speak" command might include a description of what to say)? Would the description be included in the command (which requires that the Map parse the command into a command-description pair) or in an explanation field?
  */
-public class GenericProg extends Thread //Should this implement Runnable instead?
+public class GenericProg implements Runnable
 {
 		@SuppressWarnings("unused")
 	private Configuration configuration; //Initializes RabbitMQ & exchanges
@@ -54,20 +56,19 @@ public class GenericProg extends Thread //Should this implement Runnable instead
 		this.systemCommands = new HashMap<String, CommandProcessor>();
 			this.setSystemCommand("Quit", new QuitCommandProcessor()); //Are these the same command? Quit only ends the program thread
 			this.setSystemCommand("Exit", new ExitCommandProcessor()); // "    "    "   "      "   ? Exit ends the whole application
-			this.setSystemCommand("Status", new StatusCommandProcessor()); //Returns the current state of the program
-			this.setSystemCommand("Start", new StartCommandProcessor()); //Starts the program (i.e., allows the program to process operations; the thread is already started)
-		//	this.setSystemCommand("Pause", new PauseCommandProcessor()); //Halts any activity in the program (i.e., )
+			this.setSystemCommand("Report", new StatusCommandProcessor()); //Returns the current state of the program
+			this.setSystemCommand("Start", new StartCommandProcessor()); //"Starts" the program; does not start the program thread, but instead allows the program to process operation commands (might need refactoring)
+			this.setSystemCommand("Pause", new PauseCommandProcessor()); //Halts any *further* activity in the program (i.e., prevents the program from processing any additional operational commands)
+		//  this.setSystemCommand("Log", new LogCommandProcessor()); //Logs *what* exactly? Any extra information that the program wants to pass to the logger?
+		//	this.setSystemCommand("Stop", new StopCommandProcessor()); //Stops an individual operation command from processing or all operation commands
 			//TODO Other system commands
 		this.operationCommands = new HashMap<String, CommandProcessor>(); //Intentionally left blank by default
 		this.pub = new CommandServicePublisher(config, pubExchange);
 		this.sub = new CommandServiceSubscriber(config, subExchange);
 		this.logger = new LogPublisher(config, config.getLogExchange());
 		
-		this.setName("Program Thread");
-		
 		pub.start();
 		logger.start();
-		this.start();
 	}
 	
 	/**
@@ -93,11 +94,11 @@ public class GenericProg extends Thread //Should this implement Runnable instead
 	@Override
 	public void run()
 	{
-		//Initialize thread
+		//Initialize states
 		running = true;
 		operational = false;
 		
-		logger.sendLogMessage("Program Start", "Started " + this.getClass().toString(), "Info");
+		logger.sendLogMessage("Program Start", "Started " + this.toString(), "Info");
 		
 		//Process
 		while(running)
@@ -110,25 +111,34 @@ public class GenericProg extends Thread //Should this implement Runnable instead
 				{	
 					if(!message.hasResponse() && message.getDestination().equalsIgnoreCase(this.toString()))
 					{
-						logger.sendLogMessage("Attempt", "Attempting to process command " + message.getCommandID(), "Info");
+						logger.sendLogMessage("Attempt", this.toString() + " attempting to process command " + message.getCommandID(), "Info");
 						
 						processCommand(message);
-						pub.setMessage(message);
 						
-						//TODO Error logging
-						logger.sendLogMessage(message.getResponse().equals("Failure") ? "Error" : "Success", message.getResponse().equals("Failure") ? message.getExplanation() : "Successfully processed command " + message.getCommandID(), message.getResponse().equals("Failure") ? "High" : "Info");
+						//Notify source with results of processing
+							pub.setMessage(message);
+						
+							//TODO Error logging
+							if(message.getResponse().equals("Failure"))
+							{
+								logger.sendLogMessage("Error", this.toString() + " unable to process command " + message.getCommandID(), "High");
+							}
+							else
+							{
+								logger.sendLogMessage("Success" , this.toString() + " successfully processed command " + message.getCommandID(), "Info");
+							}
 					}
 					
 					message = null; //Resets message to avoid infinite loop
 				}
 				else
 				{
-					sleep(10);
+					Thread.sleep(10);
 				}
 			}
 			catch (InterruptedException e)
 			{
-				currentThread().interrupt();
+				Thread.currentThread().interrupt();
 				e.printStackTrace();
 			}
 		}
@@ -183,15 +193,6 @@ public class GenericProg extends Thread //Should this implement Runnable instead
 			{
 				if (operational)
 				{
-					//TODO Operation command processing; allow operation commands to issue commands to other programs (when needed)
-					/*
-					 * ***MAJOR QUESTIONS***
-					 * Should this functionality be done within this class, or within the individual command processor object (since only the processor will know with whom it needs to talk)?
-					 * Should these type of processors change the destination when it need to do so? (this requires a standard exchange for programs, which is the "Operation" exchange)
-					 * How will it know who to talk to/what command to issue? (a static Registry within commandProcessor interface?)
-					 * Do system commands have this functionality (i.e., should one program tell another to start or stop)? Is this the significant difference between system/operation commands?
-					 * Will operation commands ever deal with the program directly (i.e., make changes to the behaviors of the program as a whole)? If not, should we change the execute() method and create a new abstract class to distinguish the two types of processors?
-					 */
 					operationCommands.get(msg.getCommand().toUpperCase()).execute(this, msg);
 				}
 				else
@@ -287,10 +288,17 @@ public class GenericProg extends Thread //Should this implement Runnable instead
 		LogSubscriber logger = new LogSubscriber(config, "Logging");
 			userPub.start();
 			
-		//Create generic program
+		//Create generic programs
 		GenericProg prog = new GenericProg(config, source, destination);
+			Thread thread1 = new Thread(prog);
+		GenericProg dummy = new GenericProg(config, source, destination); //Additional program to make sure only one program executes when a command is sent
+			Thread thread2 = new Thread(dummy);
 		
-		//Since program creates a new thread, we can make the current thread sleep to synchronize the threads (arbitrary, but cleans up the display)
+		//Start separate threads for programs
+		thread1.start();
+		thread2.start();
+			
+		//Since the program exists in a concurrent thread, we can make the current thread sleep to synchronize the threads (arbitrary, but cleans up the display)
 		try
 		{
 			Thread.sleep(1000);
@@ -309,7 +317,7 @@ public class GenericProg extends Thread //Should this implement Runnable instead
 		System.out.println("==============");
 		
 		//Test
-		while(prog.isRunning())
+		while(prog.isRunning() && dummy.isRunning())
 		{
 			//Initialize message command
 			CommandServiceMessage commander = new CommandServiceMessage();

@@ -14,7 +14,7 @@ public class StatusCommandProcessor implements CommandProcessor
 		try
 		{
 			command.setResponse("Success");
-			command.setExplanation("STATE: " + program.getState().toString() + " ALIVE: " + program.isAlive() + " OPERATIONAL: " + program.isOperational());
+			command.setExplanation("ALIVE: " + program.isRunning() + " OPERATIONAL: " + program.isOperational());
 		}
 		catch (Exception e)
 		{
