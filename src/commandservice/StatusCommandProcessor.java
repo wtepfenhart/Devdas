@@ -13,13 +13,13 @@ public class StatusCommandProcessor implements CommandProcessor
 	{
 		try
 		{
-			command.setResponse("Success");
 			command.setExplanation("ALIVE: " + program.isRunning() + " OPERATIONAL: " + program.isOperational());
+			command.setResponse("Success");
 		}
 		catch (Exception e)
 		{
 			command.setResponse("Failure");
-			command.setExplanation(e.getMessage());
+			command.setExplanation(e.toString());
 		}
 	}
 }

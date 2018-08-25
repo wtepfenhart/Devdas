@@ -27,7 +27,7 @@ public class StartCommandProcessor implements CommandProcessor
 		catch(Exception e)
 		{
 			command.setResponse("Failure");
-			command.setExplanation(e.getMessage());
+			command.setExplanation(e.toString());
 		}
 	}
 }

@@ -8,18 +8,19 @@ package commandservice;
  */
 public class QuitCommandProcessor implements CommandProcessor
 {
-	public void execute(GenericProg prog, CommandServiceMessage command)
+	@Override
+	public void execute(GenericProg program, CommandServiceMessage command)
 	{
 		try
 		{
+			program.setRunning(false);
 			command.setResponse("Success");
-			command.setExplanation("Received Quit Command"); //Self-explanatory; probably should remove
-			prog.setRunning(false);
+			command.setExplanation("Received Quit Command"); //Self-explanatory; probably should replace with something more meaningful
 		}
 		catch(Exception e)
 		{
 			command.setResponse("Failure");
-			command.setResponse(e.getMessage());
+			command.setResponse(e.toString());
 		}
 	}
 }

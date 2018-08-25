@@ -217,44 +217,32 @@ public class CommandServiceMessage
 ////////////////////////////*GETTERS*////////////////////////////
     public String getResponse()
     {
-        if (resp != null)
-            return resp;
-        return "Nil";
+        return resp;
     }
     
     public String getCommandID()
     {
-    	if (cmdID != null)
-            return cmdID;
-        return "Nil";
+    	return cmdID;
     }
     
     public String getDestination()
     {
-        if (dest != null)
-            return dest;
-        return "Nil";
+        return dest;
     }
     
     public String getSource()
     {
-        if (src != null)
-            return src;
-        return "Nil";
+        return src;
     }
     
     public String getCommand()
     {
-        if (cmd != null)
-            return cmd;
-        return "Nil";
+        return cmd;
     }
     
     public String getExplanation()
     {
-        if (exp != null)
-            return exp;
-        return "Nil";
+        return exp;
     }
     
     /**

@@ -16,14 +16,14 @@ public class ExitCommandProcessor implements CommandProcessor
 	{
 		try
 		{
+			System.exit(1);
 			command.setResponse("Success"); //Unnecessary, since the command will not be read after exiting
 			command.setExplanation("Received Exit Command"); // " "
-			System.exit(1);
 		}
 		catch(Exception e)
 		{
 			command.setResponse("Failure");
-			command.setResponse(e.getMessage());
+			command.setResponse(e.toString());
 		}
 	}
 

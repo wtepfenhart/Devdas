@@ -9,9 +9,9 @@ public class PauseCommandProcessor implements CommandProcessor
 		{
 			if(program.isOperational())
 			{
-				command.setResponse("Success");
-				command.setExplanation("Received Pause Command");
 				program.setOperational(false);
+				command.setResponse("Success");
+				command.setExplanation("Received Pause Command"); //Self-explanatory; probably should replace with something more meaningful
 			}
 			else
 			{
@@ -21,7 +21,7 @@ public class PauseCommandProcessor implements CommandProcessor
 		catch(Exception e)
 		{
 			command.setResponse("Failure");
-			command.setExplanation(e.getMessage());
+			command.setExplanation(e.toString());
 		}
 	}
 }

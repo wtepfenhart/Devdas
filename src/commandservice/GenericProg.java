@@ -20,12 +20,14 @@ import devdas.LogSubscriber;
  */
 /*
  * ***MAJOR QUESTIONS***
- * Should operations be done within this class, or within the individual command processor object (who will know with whom it needs to talk)?
+ * Should operations be done within programs, or within the individual command processor object?
  * Should operation processors change the destination when it need to talk to other programs (this requires a standard exchange for programs, which is the "Operation" exchange)?
- * How will it know who to talk to/what command to issue? (a static Registry within commandProcessor interface, or do all programs subscribe to a registry?)
- * Do system commands have this functionality (i.e., should one program tell another to start or stop)? Is this the significant difference between system/operation commands?
- * Will operation commands ever deal with the program directly (i.e., make changes to the behaviors of the program as a whole)? If not, should we change the execute() method and create a new abstract class to distinguish the two types of processors?
- * How should a command have multiple parameters (i.e., a "Speak" command might include a description of what to say)? Would the description be included in the command (which requires that the Map parse the command into a command-description pair) or in an explanation field?
+ * How will it know who to talk to/what command to issue? A static Registry within commandProcessor interface, or within GenericProg? Or a whole new ProgramRegistry class?
+ * Should the destination field in CommandService messages be an array (since there may be messages sent to multiple programs at once)? 
+ * Do system commands have this functionality (i.e., should one program tell another to start or stop)? Is this a significant difference between system/operation commands?
+ * Will operation commands ever deal with the program directly (i.e., make changes to the behaviors of the program as a whole)? If not, should we change the execute() method and create two new abstract classes to distinguish the two types of processors?
+ * How should a command have multiple parameters (i.e., a "Speak" command might include a description of what to say)? Would the description be included in the explanation field of the CommandService message?
+ * How would the registry distinguish commands? By a ProcessID (which would be a new field in CommandService messages), or by the CommandProcessor in use (a reference to the object's name)?
  */
 public class GenericProg implements Runnable
 {
@@ -60,7 +62,7 @@ public class GenericProg implements Runnable
 			this.setSystemCommand("Start", new StartCommandProcessor()); //"Starts" the program; does not start the program thread, but instead allows the program to process operation commands (might need refactoring)
 			this.setSystemCommand("Pause", new PauseCommandProcessor()); //Halts any *further* activity in the program (i.e., prevents the program from processing any additional operational commands)
 		//  this.setSystemCommand("Log", new LogCommandProcessor()); //Logs *what* exactly? Any extra information that the program wants to pass to the logger?
-		//	this.setSystemCommand("Stop", new StopCommandProcessor()); //Stops an individual operation command from processing or all operation commands
+		//	this.setSystemCommand("Stop", new StopCommandProcessor()); //Stops a program from processing one or all commands(would require interrupt() method)
 			//TODO Other system commands
 		this.operationCommands = new HashMap<String, CommandProcessor>(); //Intentionally left blank by default
 		this.pub = new CommandServicePublisher(config, pubExchange);
@@ -81,13 +83,13 @@ public class GenericProg implements Runnable
 		this(config, config.getExchange(), config.getOperationExchange());
 	}
 	
-	public GenericProg(Configuration config, String[] commands, CommandProcessor[] processors)
+	public GenericProg(Configuration config, String[] commands, CommandProcessor[] opProcessors)
 	{
 		this(config);
 		
-		for (int i = 0; i < commands.length && i < processors.length; i++) //TODO Check "off-by-one"
+		for (int i = 0; i < commands.length && i < opProcessors.length; i++) //TODO Check "off-by-one"
 		{
-			this.setOperationCommand(commands[i], processors[i]);
+			this.setOperationCommand(commands[i], opProcessors[i]);
 		}
 	}
 	
@@ -257,17 +259,17 @@ public class GenericProg implements Runnable
 	/**
 	 * @return Returns a list of the current commands within the known system commands
 	 */
-	public String getSystemCommands()
+	public Map<String, CommandProcessor> getSystemCommands()
 	{
-		return systemCommands.keySet().toString();
+		return systemCommands;
 	}
 	
 	/**
 	 * @return Returns a list of the current commands within the known operation commands
 	 */
-	public String getOperationCommands()
+	public Map<String, CommandProcessor> getOperationCommands()
 	{
-		return operationCommands.keySet().toString();
+		return operationCommands;
 	}
 	
 	/**
@@ -291,7 +293,7 @@ public class GenericProg implements Runnable
 		//Create generic programs
 		GenericProg prog = new GenericProg(config, source, destination);
 			Thread thread1 = new Thread(prog);
-		GenericProg dummy = new GenericProg(config, source, destination); //Additional program to make sure only one program executes when a command is sent
+		GenericProg dummy = new GenericProg(config, source, destination); //Tests for accidental multiprogram execution
 			Thread thread2 = new Thread(dummy);
 		
 		//Start separate threads for programs
@@ -311,8 +313,11 @@ public class GenericProg implements Runnable
 		System.out.println("==============");
 		
 		System.out.println("Known commands are listed below:");
-		System.out.println("\tSYSTEM COMMANDS: " + prog.getSystemCommands());
-		System.out.println("\tOPERATION COMMANDS: " + prog.getOperationCommands());
+		
+		System.out.println("\tSYSTEM COMMANDS: " + prog.getSystemCommands().keySet());
+		
+		System.out.println("\tOPERATION COMMANDS: " + prog.getOperationCommands().keySet());
+		
 		
 		System.out.println("==============");
 		
@@ -333,7 +338,16 @@ public class GenericProg implements Runnable
 				System.out.println();
 			
 			//Set command and send
-			commander.setCommand(command);
+			if(command.contains(" ")) //Command has an explanation
+			{
+				commander.setCommand(command.substring(0, command.indexOf(" ")));
+				commander.setExplanation(command.substring(command.indexOf(" ") + 1));
+			}
+			else
+			{
+				commander.setCommand(command);
+			}
+			
 				System.out.println(" [" + source + "] Sent " + commander.toJSONString());
 			userPub.setMessage(commander);
 			
