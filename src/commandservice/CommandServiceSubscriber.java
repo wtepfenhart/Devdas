@@ -40,7 +40,7 @@ public class CommandServiceSubscriber extends ExchangeSubscriber
 					System.out.println(msg.getExplanation());
 					break;
 				default:
-					System.out.println("Unknown Response"); //Should we throw an error here instead?
+					System.out.println("Unknown Response"); //Should we throw an error here instead? Or just ignore this case?
 					break;
     		}
     	}

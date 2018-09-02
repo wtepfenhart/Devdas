@@ -1,18 +1,18 @@
 package commandservice;
 
 /**
- * CommandProcessor that handles temporarily stopping a program from processing a command. If the program cannot process the command, then a failure response will be set to the CommandService Message.
+ * CommandProcessor that handles allowing the program to process commands after it has been paused. If the program cannot process the command, then a failure response will be set to the CommandService Message.
  * Otherwise, the processor will return a successful response.
  * 
  * @author B-T-Johnson
  */
-public class PauseCommandProcessor extends SystemCommandProcessor
-{	
-	public PauseCommandProcessor(GenericProg program)
+public class ResumeCommandProcessor extends SystemCommandProcessor
+{
+	public ResumeCommandProcessor(GenericProg program)
 	{
 		super(program);
 	}
-	
+
 	@Override
 	public void run()
 	{	
@@ -20,9 +20,9 @@ public class PauseCommandProcessor extends SystemCommandProcessor
 		{
 			if(command.getExplanation() != null)
 			{
-				if(command.getExplanation().toUpperCase().equals("ALL"))
+				if(command.getExplanation().toUpperCase() == "ALL")
 				{
-					//TODO Handle "Pause All" Case
+					//TODO Handle "Start All" Case
 				}
 				else
 				{
@@ -31,29 +31,28 @@ public class PauseCommandProcessor extends SystemCommandProcessor
 					
 					if(sys != null)
 					{	
-						if(sys.getState().equals(State.RUNNABLE))
+						if(!sys.getState().equals(State.RUNNABLE))
 						{
-							sys.suspend();
+							sys.resume();
 							command.setResponse("Success");
-							command.setExplanation(sys.toString() + " received Pause Command"); //Self-explanatory; probably should replace with something more meaningful
+							command.setExplanation(sys.toString() + " received Resume Command"); //Self-explanatory; probably should replace with something more meaningful
 						}
 						else
 						{
-							throw new Exception("Cannot pause " + sys.toString()); //Cannot pause a processor that isn't running
-							
+							throw new Exception("Cannot start " + sys.toString()); //Cannot start a processor that is already running
 						}
 					}
 					else if(opt != null)
 					{	
-						if(opt.getState().equals(State.RUNNABLE))
+						if(!opt.getState().equals(State.RUNNABLE))
 						{
-							opt.suspend();
+							opt.resume();
 							command.setResponse("Success");
-							command.setExplanation(opt.toString() + " received Pause Command"); //Self-explanatory; probably should replace with something more meaningful
+							command.setExplanation(opt.toString() + " received Resume Command"); //Self-explanatory; probably should replace with something more meaningful
 						}
 						else
 						{
-							throw new Exception("Cannot pause " + opt.toString()); //Cannot pause a processor that isn't running
+							throw new Exception("Cannot start " + opt.toString()); //Cannot start a processor that is already running
 						}
 					}
 					else

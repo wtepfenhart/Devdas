@@ -1,27 +1,25 @@
 package commandservice;
 
-/**
- * CommandProcessor that handles allowing the program to process operational commands. If the program cannot process the command, then a failure response will be set to the CommandService Message.
- * Otherwise, the processor will return a successful response.
- * 
- * @author B-T-Johnson
- */
-public class StartCommandProcessor implements CommandProcessor
+public class StartCommandProcessor extends SystemCommandProcessor
 {
-	@Override
-	public void execute(GenericProg prog, CommandServiceMessage command)
+	public StartCommandProcessor(GenericProg program)
+	{
+		super(program);
+	}
+	
+	public void run()
 	{
 		try
 		{
-			if (prog.isOperational())
+			if(getProgram().isRunning())
 			{
-				throw new Exception("Program already started!"); //Cannot start a program twice
+				throw new Exception("Cannot Start " + getProgram().toString()); //Cannot start a program that is already running
 			}
 			else
 			{
+				getProgram().setRunning(true);
 				command.setResponse("Success");
-				command.setExplanation("Received Start Command");
-				prog.setOperational(true);
+				command.setExplanation("Received Resume Command"); //Self-explanatory; probably should replace with something more meaningful
 			}
 		}
 		catch(Exception e)

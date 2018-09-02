@@ -9,10 +9,14 @@ package commandservice;
  * 
  * @author B-T-Johnson
  */
-public class ExitCommandProcessor implements CommandProcessor
+public class ExitCommandProcessor extends SystemCommandProcessor
 {
-	@Override
-	public void execute(GenericProg program, CommandServiceMessage command)
+	public ExitCommandProcessor(GenericProg program)
+	{
+		super(program);
+	}
+	
+	public void run()
 	{
 		try
 		{
@@ -26,5 +30,4 @@ public class ExitCommandProcessor implements CommandProcessor
 			command.setResponse(e.toString());
 		}
 	}
-
 }
