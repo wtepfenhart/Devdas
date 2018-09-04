@@ -16,18 +16,10 @@ public class ExitCommandProcessor extends SystemCommandProcessor
 		super(program);
 	}
 	
-	public void run()
+	public void process() throws Exception
 	{
-		try
-		{
-			System.exit(1);
-			command.setResponse("Success"); //Unnecessary, since the command will not be read after exiting
-			command.setExplanation("Received Exit Command"); // " "
-		}
-		catch(Exception e)
-		{
-			command.setResponse("Failure");
-			command.setResponse(e.toString());
-		}
+		System.exit(1);
+		
+		command.setExplanation("Received Exit Command"); //Unnecessary, since the command will not be read after exiting
 	}
 }

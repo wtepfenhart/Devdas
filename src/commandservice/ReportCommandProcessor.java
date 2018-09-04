@@ -7,19 +7,10 @@ public class ReportCommandProcessor extends SystemCommandProcessor
 		super(program);
 	}
 
-	@Override
-	public void run()
+	public void process() throws Exception
 	{
-		try
-		{
-			getProgram().sendLogMessage("Report", getProgram().toString() + " is " + (getProgram().isRunning() ? "RUNNING" : "NOT RUNNING"), "Info"); //TODO Refactor "not running" to something more useful
-			command.setResponse("Success");
-			command.setExplanation(getProgram().isRunning() ? "RUNNING" : "NOT RUNNING");
-		}
-		catch(Exception e)
-		{
-			command.setResponse("Failure");
-			command.setExplanation(e.toString());
-		}
+		getProgram().sendLogMessage("Report", getProgram().toString() + " is " + (getProgram().isRunning() ? "RUNNING" : "NOT RUNNING"), "Info"); //TODO Refactor "not running" to something more useful
+		
+		command.setExplanation(getProgram().isRunning() ? "RUNNING" : "NOT RUNNING");
 	}
 }

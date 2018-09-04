@@ -13,27 +13,17 @@ public class LogCommandProcessor extends SystemCommandProcessor
 		super(program);
 	}
 
-	@Override
-	public void run()
+	public void process() throws Exception
 	{
-		try
+		if(command.getExplanation() != null)
 		{	
-			if(command.getExplanation() != null)
-			{	
-				getProgram().sendLogMessage("Message", command.getExplanation(), "Info"); //Should there be an option to set the event name and severity level to something other than "Message" and "Info"?
-			}
-			else
-			{
-				throw new Exception("No message set to log command!");
-			}
-			
-			command.setResponse("Success");
-			command.setExplanation("Received Log Command"); //Self-explanatory; probably should replace with something more meaningful
+			getProgram().sendLogMessage("Message", command.getExplanation(), "Info"); //Should there be an option to set the event name and severity level to something other than "Message" and "Info"?
 		}
-		catch(Exception e)
+		else
 		{
-			command.setResponse("Failure");
-			command.setExplanation(e.toString());
+			throw new Exception("No message set to log command!");
 		}
+		
+		command.setExplanation("Received Log Command"); //Self-explanatory; probably should replace with something more meaningful
 	}
 }

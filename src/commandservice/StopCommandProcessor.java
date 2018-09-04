@@ -12,27 +12,18 @@ public class StopCommandProcessor extends SystemCommandProcessor
 	{
 		super(program);
 	}
-
-	@Override
-	public void run()
+	
+	public void process() throws Exception
 	{
-		try
+		if(getProgram().isRunning())
 		{
-			if(getProgram().isRunning())
-			{
-				getProgram().setRunning(false);
-				command.setResponse("Success");
-				command.setExplanation("Received Stop Command"); //Self-explanatory; probably should replace with something more meaningful
-			}
-			else
-			{
-				throw new Exception("Cannot Stop " + getProgram().toString());
-			}
+			getProgram().setRunning(false);
 		}
-		catch(Exception e)
+		else
 		{
-			command.setResponse("Failure");
-			command.setResponse(e.toString());
+			throw new Exception("Cannot Stop " + getProgram().toString());
 		}
+		
+		command.setExplanation("Received Stop Command"); //Self-explanatory; probably should replace with something more meaningful
 	}
 }

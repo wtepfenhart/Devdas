@@ -7,25 +7,17 @@ public class StartCommandProcessor extends SystemCommandProcessor
 		super(program);
 	}
 	
-	public void run()
+	public void process() throws Exception
 	{
-		try
+		if(getProgram().isRunning())
 		{
-			if(getProgram().isRunning())
-			{
-				throw new Exception("Cannot Start " + getProgram().toString()); //Cannot start a program that is already running
-			}
-			else
-			{
-				getProgram().setRunning(true);
-				command.setResponse("Success");
-				command.setExplanation("Received Resume Command"); //Self-explanatory; probably should replace with something more meaningful
-			}
+			throw new Exception("Cannot Start " + getProgram().toString()); //Cannot start a program that is already running
 		}
-		catch(Exception e)
+		else
 		{
-			command.setResponse("Failure");
-			command.setExplanation(e.toString());
+			getProgram().setRunning(true);
 		}
+
+		command.setExplanation("Received Resume Command"); //Self-explanatory; probably should replace with something more meaningful
 	}
 }

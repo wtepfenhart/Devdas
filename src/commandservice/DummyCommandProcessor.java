@@ -7,21 +7,12 @@ public class DummyCommandProcessor extends OperationCommandProcessor
 		super();
 	}
 	
-	@Override
-	public void run()
+	public void process() throws Exception
 	{
-		try
-		{
-			System.err.println("DOING SOMETHING");
-			sleep(100000);
+		System.err.println("DOING SOMETHING");
+		sleep(10000);
 			
-			command.setResponse("Success");
-			command.setExplanation("Received Do Command");
-		}
-		catch(Exception e)
-		{
-			command.setResponse("Failure");
-			command.setExplanation(e.toString());
-		}
+		command.setResponse("Success");
+		command.setExplanation("Received Do Command");
 	}
 }

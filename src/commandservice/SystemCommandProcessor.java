@@ -18,13 +18,23 @@ public abstract class SystemCommandProcessor extends Thread implements CommandPr
 	public SystemCommandProcessor(GenericProg program)
 	{
 		this.program = program;
+		this.setName(this.getClass().toString());
 	}
 	
 	public void execute(CommandServiceMessage command)
 	{	
 		this.command = command;
 		
-		run(); //Probably should catch any exception here instead of in individual processors
+		try
+		{
+			process();
+			this.command.setResponse("Success");
+		}
+		catch(Exception e)
+		{
+			this.command.setResponse("Failure");
+			this.command.setExplanation(e.toString());
+		}
 	}
 	
 	/**
@@ -34,4 +44,6 @@ public abstract class SystemCommandProcessor extends Thread implements CommandPr
 	{
 		return this.program;
 	}
+	
+	public abstract void process() throws Exception;
 }

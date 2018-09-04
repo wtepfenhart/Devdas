@@ -26,6 +26,7 @@ import devdas.LogSubscriber;
  * How should a command have option parameters (i.e., a "Speak" command might include a String containing of what to say)? Would the extra parameter be included in the explanation field of the CommandService message?
  * How would the registry distinguish between processors? By a ProcessID (a new field in CommandService messages) appended to the command when sent, or by the individual processor when received?
  * Should processors be Threads?
+ * Should a program that has stopped running still be listening to messages being sent (since another program may request this program's services)? 
  */
 public class GenericProg
 {
@@ -57,9 +58,9 @@ public class GenericProg
 			this.setSystemCommand("Exit", new ExitCommandProcessor(this)); // "    "    "   "      "   ? Exit ends the whole application
 			this.setSystemCommand("Status", new StatusCommandProcessor(this)); //Returns the current state of a specific processor
 			this.setSystemCommand("Report", new ReportCommandProcessor(this)); //Returns the current state of the program
-			this.setSystemCommand("Resume", new ResumeCommandProcessor(this)); //Allows a processor to continue processing after it has been paused
-			this.setSystemCommand("Start", new StartCommandProcessor(this)); //Starts a program after it has been stopped
-			this.setSystemCommand("Pause", new PauseCommandProcessor(this)); //Temporarily halts a processor from processing a command
+	/***/	this.setSystemCommand("Resume", new ResumeCommandProcessor(this)); //Allows a processor to continue processing after it has been paused
+	/***/	this.setSystemCommand("Start", new StartCommandProcessor(this)); //Starts a program after it has been stopped
+	/***/	this.setSystemCommand("Pause", new PauseCommandProcessor(this)); //Temporarily halts a processor from processing a command
 			this.setSystemCommand("Log", new LogCommandProcessor(this)); //Sends a log message
 			//TODO Other system commands
 		this.operationCommands = new HashMap<String, OperationCommandProcessor>(); //Intentionally left blank by default
@@ -108,7 +109,7 @@ public class GenericProg
 	 * 
 	 * See {@link #processCommand(CommandServiceMessage)} to see how the message is processed.
 	 */
-	private void receiveMessage() //Will this method ever be changed or used outside of this generic?
+	public void receiveMessage() //Will this method ever be changed or used outside of this generic?
 	{
 		CommandServiceMessage msg = sub.consumeMessage();
 		
@@ -165,10 +166,10 @@ public class GenericProg
 	 * If the command exists within the program, the program will process the command and a success or failure response will be assigned to the CommandService object, depending on the success or failure upon execution.
 	 * Otherwise, no action will be taken, and a failure response and explanation will be assigned.
 	 * 
-	 * @param msg the CommandService that contains the command
-	 * @return Returns if the program is still running after processing the command
+	 * @param msg the CommandService message that contains the command
+	 * @return Returns if the program is running when processing the command
 	 */
-	private boolean processCommand(CommandServiceMessage msg) //Will this method ever be changed or used outside of this generic?
+	public boolean processCommand(CommandServiceMessage msg) //Will this method ever be changed or used outside of this generic?
 	{
 		msg.setDestination(msg.getSource());
 		msg.setSource(this.toString());
@@ -176,26 +177,26 @@ public class GenericProg
 
 		if(msg.hasCommand())
 		{
-			if (systemCommands.get(msg.getCommand().toUpperCase()) != null) //Should system commands have priority over operation commands?
+			if(isRunning() || msg.getCommand().equalsIgnoreCase("START"))
 			{
-				systemCommands.get(msg.getCommand().toUpperCase()).execute(msg);
-			}
-			else if(operationCommands.get(msg.getCommand().toUpperCase()) != null)
-			{
-				if(isRunning())
+				if (systemCommands.get(msg.getCommand().toUpperCase()) != null) //Should system commands have priority over operation commands?
+				{
+					systemCommands.get(msg.getCommand().toUpperCase()).execute(msg);
+				}
+				else if(operationCommands.get(msg.getCommand().toUpperCase()) != null)
 				{
 					operationCommands.get(msg.getCommand().toUpperCase()).execute(msg);
 				}
 				else
 				{
 					msg.setResponse("Failure");
-					msg.setExplanation("Program no longer running");
+					msg.setExplanation("Unexpected command: " + msg.getCommand().toUpperCase());
 				}
 			}
 			else
 			{
 				msg.setResponse("Failure");
-				msg.setExplanation("Unexpected command: " + msg.getCommand().toUpperCase());
+				msg.setExplanation("Program no longer running");
 			}
 		}
 		else
@@ -204,7 +205,7 @@ public class GenericProg
 			msg.setExplanation("No command");
 		}
 
-		//Resets command field if there is no new command; prevents accidental processing between programs
+		//Resets command field if the command has not been reissued; prevents accidental re-execution between programs
 		if (msg.getCommandID().equals(currentID))
 		{
 			msg.setCommand(null);
