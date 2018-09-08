@@ -9,16 +9,16 @@ package commandservice;
  * 
  * @author B-T-Johnson
  */
-public class ExitCommandProcessor extends SystemCommandProcessor
+public class PerformExitCommandProcessor extends SystemCommandProcessor
 {
-	public ExitCommandProcessor(GenericProg program)
+	public PerformExitCommandProcessor(GenericProg program)
 	{
 		super(program);
 	}
 	
-	public void process() throws Exception
+	public void process(CommandServiceMessage command) throws Exception
 	{
-		System.exit(1);
+		getProgram().exit();
 		
 		command.setExplanation("Received Exit Command"); //Unnecessary, since the command will not be read after exiting
 	}

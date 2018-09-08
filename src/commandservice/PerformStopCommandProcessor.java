@@ -6,23 +6,16 @@ package commandservice;
  * 
  * @author B-T-Johnson
  */
-public class StopCommandProcessor extends SystemCommandProcessor
+public class PerformStopCommandProcessor extends SystemCommandProcessor
 {
-	public StopCommandProcessor(GenericProg program)
+	public PerformStopCommandProcessor(GenericProg program)
 	{
 		super(program);
 	}
 	
-	public void process() throws Exception
+	public void process(CommandServiceMessage command) throws Exception
 	{
-		if(getProgram().isRunning())
-		{
-			getProgram().setRunning(false);
-		}
-		else
-		{
-			throw new Exception("Cannot Stop " + getProgram().toString());
-		}
+		getProgram().stop();
 		
 		command.setExplanation("Received Stop Command"); //Self-explanatory; probably should replace with something more meaningful
 	}

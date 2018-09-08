@@ -11,29 +11,23 @@ package commandservice;
  * @author B-T-Johnson
  */
 public abstract class OperationCommandProcessor extends Thread implements CommandProcessor
-{
-	protected CommandServiceMessage command;
-	
+{	
 	public OperationCommandProcessor()
 	{
 		this.setName(this.getClass().toString());
 	}
 	
-	public void execute(CommandServiceMessage command)
+	public final void execute(CommandServiceMessage command)
 	{	
-		this.command = command;
-		
 		try
 		{
-			process();
-			this.command.setResponse("Success");
+			process(command);
+			command.setResponse("Success");
 		}
 		catch(Exception e)
 		{
-			this.command.setResponse("Failure");
-			this.command.setExplanation(e.toString());
+			command.setResponse("Failure");
+			command.setExplanation(e.toString());
 		}
 	}
-	
-	public abstract void process() throws Exception;
 }

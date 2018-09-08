@@ -6,18 +6,18 @@ package commandservice;
  * 
  * @author B-T-Johnson
  */
-public class LogCommandProcessor extends SystemCommandProcessor
+public class PerformLogCommandProcessor extends SystemCommandProcessor
 {	
-	public LogCommandProcessor(GenericProg program)
+	public PerformLogCommandProcessor(GenericProg program)
 	{
 		super(program);
 	}
 
-	public void process() throws Exception
+	public void process(CommandServiceMessage command) throws Exception
 	{
 		if(command.getExplanation() != null)
 		{	
-			getProgram().sendLogMessage("Message", command.getExplanation(), "Info"); //Should there be an option to set the event name and severity level to something other than "Message" and "Info"?
+			getProgram().log("Message", command.getExplanation(), "Info"); //Should there be an option to set the event name and severity level to something other than "Message" and "Info"?
 		}
 		else
 		{

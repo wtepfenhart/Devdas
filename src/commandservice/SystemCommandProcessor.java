@@ -13,7 +13,6 @@ package commandservice;
 public abstract class SystemCommandProcessor extends Thread implements CommandProcessor
 {
 	private GenericProg program;
-	protected CommandServiceMessage command;
 	
 	public SystemCommandProcessor(GenericProg program)
 	{
@@ -21,19 +20,17 @@ public abstract class SystemCommandProcessor extends Thread implements CommandPr
 		this.setName(this.getClass().toString());
 	}
 	
-	public void execute(CommandServiceMessage command)
+	public final void execute(CommandServiceMessage command)
 	{	
-		this.command = command;
-		
 		try
 		{
-			process();
-			this.command.setResponse("Success");
+			process(command);
+			command.setResponse("Success");
 		}
 		catch(Exception e)
 		{
-			this.command.setResponse("Failure");
-			this.command.setExplanation(e.toString());
+			command.setResponse("Failure");
+			command.setExplanation(e.toString());
 		}
 	}
 	
@@ -44,6 +41,4 @@ public abstract class SystemCommandProcessor extends Thread implements CommandPr
 	{
 		return this.program;
 	}
-	
-	public abstract void process() throws Exception;
 }

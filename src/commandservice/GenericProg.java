@@ -1,5 +1,6 @@
 package commandservice;
 
+import java.lang.Thread.State;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -19,14 +20,12 @@ import devdas.LogSubscriber;
  * ***MAJOR QUESTIONS***
  * How should processors "talk" to each other (if they need to)? Should processors send a new command through the program? Or should they deal directly with the processor themselves (Right now, all processors can communicate directly with each other, but this isn't very flexible)?
  * How will it know who to talk to/what command to issue? A static Registry within commandProcessor interface, or within GenericProg? Or a whole new Program/ProcessorRegistry class?
- * Can the destination field in CommandService messages be an array (since there may be messages for multiple programs at once)?
- * Is there a distinct difference between operation and system commands (i.e., should we make two separate objects for each that both implement the CommandProcessor interface)?
+ * Can the destination field in CommandService messages be an array (since there may be messages for multiple programs at once)? Or should it just be an Object to allow any type of data through? (PROBLEM: when passed through RabbitMQ, the data can ONLY be written as a String)
  * Will operation commands ever deal with the program directly (i.e., make changes to the behaviors of the program as a whole)? If not, should we change the execute() method to reflect this? **DONE**
- * What is the commonality between operation commands (i.e., what do they have in common)?
- * How should a command have option parameters (i.e., a "Speak" command might include a String containing of what to say)? Would the extra parameter be included in the explanation field of the CommandService message?
+ * What do operation commands have in common that system commands don't, and vice versa?
  * How would the registry distinguish between processors? By a ProcessID (a new field in CommandService messages) appended to the command when sent, or by the individual processor when received?
- * Should processors be Threads?
- * Should a program that has stopped running still be listening to messages being sent (since another program may request this program's services)? 
+ * Should processors be Threads? Should processors run concurrently (i.e., each processor can operate separately from the others), or should there only be one processor running at any one time (since multi-threading may slow down the machine excessively)?
+ * Should a program that has stopped running still be listening to messages being sent (since another program may request this program to start again)? 
  */
 public class GenericProg
 {
@@ -54,14 +53,15 @@ public class GenericProg
 		this.pubExchange = pubExchange;
 		this.subExchange = subExchange;
 		this.systemCommands = new HashMap<String, SystemCommandProcessor>();
-			this.setSystemCommand("Quit", new StopCommandProcessor(this)); //Are these the same command? Stop only ends a singular program by changing its running variable
-			this.setSystemCommand("Exit", new ExitCommandProcessor(this)); // "    "    "   "      "   ? Exit ends the whole application
-			this.setSystemCommand("Status", new StatusCommandProcessor(this)); //Returns the current state of a specific processor
-			this.setSystemCommand("Report", new ReportCommandProcessor(this)); //Returns the current state of the program
-	/***/	this.setSystemCommand("Resume", new ResumeCommandProcessor(this)); //Allows a processor to continue processing after it has been paused
-	/***/	this.setSystemCommand("Start", new StartCommandProcessor(this)); //Starts a program after it has been stopped
-	/***/	this.setSystemCommand("Pause", new PauseCommandProcessor(this)); //Temporarily halts a processor from processing a command
-			this.setSystemCommand("Log", new LogCommandProcessor(this)); //Sends a log message
+			this.setSystemCommand("Quit", new PerformStopCommandProcessor(this)); //Are these the same command? Stop only ends a singular program by changing its running variable
+			this.setSystemCommand("Exit", new PerformExitCommandProcessor(this)); // "    "    "   "      "   ? Exit ends the whole application
+			this.setSystemCommand("Status", new PerformStatusCommandProcessor(this)); //Returns the current state of a specific processor
+			this.setSystemCommand("Report", new PerformReportCommandProcessor(this)); //Returns the current state of the program
+/***FIX***/	this.setSystemCommand("Resume", new PerformResumeCommandProcessor(this)); //Allows a processor to continue processing after it has been paused
+			this.setSystemCommand("Start", new PerformStartCommandProcessor(this)); //Starts a program after it has been stopped
+/***FIX***/	this.setSystemCommand("Pause", new PerformPauseCommandProcessor(this)); //Temporarily halts a processor from processing a command
+			this.setSystemCommand("Log", new PerformLogCommandProcessor(this)); //Sends a log message
+			this.setSystemCommand("Do", new PerformDoCommandProcessor(this)); //Dummy processor; used for testing Pause and Resume
 			//TODO Other system commands
 		this.operationCommands = new HashMap<String, OperationCommandProcessor>(); //Intentionally left blank by default
 		this.pub = new CommandServicePublisher(config, pubExchange);
@@ -117,7 +117,7 @@ public class GenericProg
 		{	
 			if(!msg.hasResponse() && msg.getDestination().equalsIgnoreCase(this.toString()))
 			{
-				sendLogMessage("Attempt", this.toString() + " attempting to process command " + msg.getCommandID(), "Info");
+				this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process command " + msg.getCommandID(), "Info");
 					
 				processCommand(msg);
 					
@@ -127,11 +127,11 @@ public class GenericProg
 				//TODO Error logging; should the individual command processor issue the log message?
 				if(msg.getResponse().equals("Failure"))
 				{
-					sendLogMessage("Error", this.toString() + " unable to process command " + msg.getCommandID(), "High");
+					this.logger.sendLogMessage("Error", this.toString() + " unable to process command " + msg.getCommandID(), "High");
 				}
 				else
 				{
-					sendLogMessage("Success" , this.toString() + " successfully processed command " + msg.getCommandID(), "Info");
+					this.logger.sendLogMessage("Success" , this.toString() + " successfully processed command " + msg.getCommandID(), "Info");
 				}
 			}
 				
@@ -177,26 +177,18 @@ public class GenericProg
 
 		if(msg.hasCommand())
 		{
-			if(isRunning() || msg.getCommand().equalsIgnoreCase("START"))
+			if (systemCommands.get(msg.getCommand().toUpperCase()) != null) //Should system commands have priority over operation commands?
 			{
-				if (systemCommands.get(msg.getCommand().toUpperCase()) != null) //Should system commands have priority over operation commands?
-				{
-					systemCommands.get(msg.getCommand().toUpperCase()).execute(msg);
-				}
-				else if(operationCommands.get(msg.getCommand().toUpperCase()) != null)
-				{
-					operationCommands.get(msg.getCommand().toUpperCase()).execute(msg);
-				}
-				else
-				{
-					msg.setResponse("Failure");
-					msg.setExplanation("Unexpected command: " + msg.getCommand().toUpperCase());
-				}
+				systemCommands.get(msg.getCommand().toUpperCase()).execute(msg);
+			}
+			else if(operationCommands.get(msg.getCommand().toUpperCase()) != null)
+			{
+				operationCommands.get(msg.getCommand().toUpperCase()).execute(msg);
 			}
 			else
 			{
 				msg.setResponse("Failure");
-				msg.setExplanation("Program no longer running");
+				msg.setExplanation("Unexpected command: " + msg.getCommand().toUpperCase());
 			}
 		}
 		else
@@ -219,13 +211,13 @@ public class GenericProg
 	 */
 	public void setRunning(boolean running)
 	{
-		if (running)
+		if(running)
 		{
-			sendLogMessage("Program Start", "Started " + this.toString(), "Info");
+			this.logger.sendLogMessage("Program Start", "Started " + this.toString(), "Info");
 		}
 		else
 		{
-			sendLogMessage("Program End", "Ended " + this.toString(), "Info");
+			this.logger.sendLogMessage("Program End", "Ended " + this.toString(), "Info");
 		}
 		
 		this.running = running;
@@ -256,18 +248,6 @@ public class GenericProg
 	}
 	
 	/**
-	 * @return Returns a Map of the current commands within the program; might need to add appropriate cast when needed
-	 */
-	@SuppressWarnings("rawtypes")
-	public Map<String, Map> getCommands() //Is there a "safer" way to send the list of commands without giving the recipient the ability to change the state of the Map?
-	{
-		Map<String, Map> commandMap = new HashMap<>();
-			commandMap.put("System", systemCommands);
-			commandMap.put("Operation", operationCommands);
-		return commandMap;
-	}
-	
-	/**
 	 * Sends a command through the publisher associated with this program as a CommandServiceMessage
 	 * 
 	 * @param cmd The CommandServiceMessage to send
@@ -276,18 +256,198 @@ public class GenericProg
 	{
 		pub.setMessage(cmd);
 	}
-	
+
+////////////////////////////*METHODS USED BY COMMAND PROCESSORS*////////////////////////////
 	/**
-	 * Sends a log message to the log exchange associated with the program
+	 * Handles sending a log message to the log exchange associated with the program; used by processors)
+	 * 
+	 * Will throw an exception if the log message cannot be sent
 	 * 
 	 * @param evnt The general type of message to be sent
 	 * @param msg A description of the event or any extraneous information associated with the event
 	 * @param severity The level of importance that this event should possess
 	 */
-	public void sendLogMessage(String evnt, String msg, String severity)
+	public void log(String evnt, String msg, String severity) throws Exception
 	{
 		logger.sendLogMessage(evnt, msg, severity);
 	}
+	
+	/**
+	 * Handles terminating the whole application with no clean-up; used if in case of critical errors
+	 * 
+	 * Will throw an exception if it cannot exit out of the application
+	 */
+	public void exit() throws Exception
+	{
+		System.exit(1);
+	}
+	
+	/**
+	 * Handles terminating an individual program with clean-up
+	 * 
+	 * Will throw an exception if the program cannot stop
+	 */
+	public void stop() throws Exception
+	{
+		if(this.isRunning())
+		{
+			this.setRunning(false);
+			this.pub.setRunning(false);
+			this.logger.setRunning(false);
+		}
+		else
+		{
+			throw new Exception(this.toString() + "is no longer running");
+		}
+	}
+	
+	/**
+	 * Handles starting a program if it has been stopped
+	 * 
+	 * Will throw an exception if it cannot start the program
+	 */
+	public void start() throws Exception
+	{
+		if(this.isRunning())
+		{
+			throw new Exception(this.toString() + " is already running"); //Cannot start a program that is already running
+		}
+		else
+		{
+			this.setRunning(true);
+			this.pub.setRunning(true);
+			this.logger.setRunning(true);
+		}
+	}
+	
+	/**
+	 * Handles temporarily halting an individual process
+	 * 
+	 * Will throw an exception if the process cannot be paused
+	 * 
+	 * @param processName Identifier for the process
+	 */
+	@SuppressWarnings("deprecation")
+	public void pause(String processName) throws Exception //TODO Need to fix
+	{
+		if(this.isRunning())
+		{
+			SystemCommandProcessor sys = (SystemCommandProcessor) this.systemCommands.get(processName.toUpperCase());
+			OperationCommandProcessor opt = (OperationCommandProcessor) this.operationCommands.get(processName.toUpperCase());
+
+			if(sys != null)
+			{	
+				if(sys.getState().equals(State.RUNNABLE))
+				{
+					sys.suspend(); //TODO Need to fix
+				}
+			}
+			else if(opt != null)
+			{	
+				if(opt.getState().equals(State.RUNNABLE))
+				{
+					opt.suspend(); //TODO Need to fix
+				}
+			}
+			else
+			{
+				throw new Exception("Cannot pause " + processName); //Cannot pause something that doesn't exist or that isn't already running
+			}
+		}
+		else
+		{
+			throw new Exception(this.toString() + "is no longer running");
+		}
+	}
+	
+	/**
+	 * Handles sending and returning a notification whether a program is running
+	 * 
+	 * Will throw an exception if it cannot retrieve the running state
+	 */
+	public String report() throws Exception //Should this method still be able to send out a message to the logger even if the program has stopped?
+	{
+		this.log("Report", this.toString() + " is " + (this.isRunning() ? "RUNNING" : "NOT RUNNING"), "Info"); //TODO Refactor "not running" to something more succinct
+		
+		return this.isRunning() ? "RUNNING" : "NOT RUNNING";
+	}
+	/**
+	 * Handles resuming a process after it has been paused
+	 * 
+	 * Will throw an exception if it cannot resume the process
+	 * 
+	 * @param processName Identifier for the process
+	 */
+	@SuppressWarnings("deprecation")
+	public void resume(String processName) throws Exception //TODO Need to fix
+	{
+		if(this.isRunning())
+		{
+			SystemCommandProcessor sys = (SystemCommandProcessor) this.systemCommands.get(processName.toUpperCase());
+			OperationCommandProcessor opt = (OperationCommandProcessor) this.operationCommands.get(processName.toUpperCase());
+
+			if(sys != null)
+			{	
+				if(!sys.getState().equals(State.RUNNABLE))
+				{
+					sys.resume(); //TODO Need to fix
+				}
+
+			}
+			else if(opt != null)
+			{	
+				if(!opt.getState().equals(State.RUNNABLE))
+				{
+					opt.resume(); //TODO Need to fix
+				}
+			}
+			else
+			{
+				throw new Exception("Cannot resume " + processName); //Cannot start something that doesn't exist or that is already running
+			}
+		}
+		else
+		{
+			throw new Exception(this.toString() + "is no longer running");
+		}
+	}
+	
+	public String status(String processName) throws Exception
+	{
+		if(this.isRunning())
+		{
+			SystemCommandProcessor sys = (SystemCommandProcessor) this.systemCommands.get(processName.toUpperCase());
+			OperationCommandProcessor opt = (OperationCommandProcessor) this.operationCommands.get(processName.toUpperCase());
+
+			if(sys != null)
+			{
+				this.log("Status", sys.toString() + " is " + (sys.isAlive() ? "ALIVE" : sys.isInterrupted() ? "INTERRUPTED" : sys.isDaemon() ? "DAEMON" : "DEAD") + " and " + sys.getState().toString(), "Info"); //Should we log the status of the processor?
+
+			}
+			else if(opt != null)
+			{
+				this.log("Status", opt.toString() + " is " + (opt.isAlive() ? "ALIVE" : opt.isInterrupted() ? "INTERRUPTED" : opt.isDaemon() ? "DAEMON" : "DEAD") + " and " + opt.getState().toString(), "Info");
+			}
+			else
+			{
+				throw new Exception("Unexpected command: " + processName);
+			}
+			
+			return sys.getState().toString();
+		}
+		else
+		{
+			throw new Exception(this.toString() + "is no longer running");
+		}
+	}
+	
+	public void doSomething() throws Exception
+	{
+		System.err.println("DOING SOMETHING");
+		Thread.sleep(10000);
+	}
+
+////////////////////////////*END OF METHODS USED BY COMMAND PROCESSORS*////////////////////////////
 	
 	/**
 	 * Used for debugging and testing the class code
@@ -330,7 +490,7 @@ public class GenericProg
 		System.out.println("==============");
 		
 		//Test
-		while(prog.isRunning() && dummy.isRunning())
+		while(prog.isRunning() || dummy.isRunning())
 		{
 			//Initialize message command
 			CommandServiceMessage commander = new CommandServiceMessage();
