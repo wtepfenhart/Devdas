@@ -61,7 +61,6 @@ public class GenericProg
 			this.setSystemCommand("Start", new PerformStartCommandProcessor(this)); //Starts a program after it has been stopped
 /***FIX***/	this.setSystemCommand("Pause", new PerformPauseCommandProcessor(this)); //Temporarily halts a processor from processing a command
 			this.setSystemCommand("Log", new PerformLogCommandProcessor(this)); //Sends a log message
-			this.setSystemCommand("Do", new PerformDoCommandProcessor(this)); //Dummy processor; used for testing Pause and Resume
 			//TODO Other system commands
 		this.operationCommands = new HashMap<String, OperationCommandProcessor>(); //Intentionally left blank by default
 		this.pub = new CommandServicePublisher(config, pubExchange);
@@ -332,8 +331,8 @@ public class GenericProg
 	{
 		if(this.isRunning())
 		{
-			SystemCommandProcessor sys = (SystemCommandProcessor) this.systemCommands.get(processName.toUpperCase());
-			OperationCommandProcessor opt = (OperationCommandProcessor) this.operationCommands.get(processName.toUpperCase());
+			Thread sys = ((SystemCommandProcessor) this.systemCommands.get(processName.toUpperCase())).getProcessingThread();
+			Thread opt = ((OperationCommandProcessor) this.operationCommands.get(processName.toUpperCase())).getProcessingThread();
 
 			if(sys != null)
 			{	
@@ -383,8 +382,8 @@ public class GenericProg
 	{
 		if(this.isRunning())
 		{
-			SystemCommandProcessor sys = (SystemCommandProcessor) this.systemCommands.get(processName.toUpperCase());
-			OperationCommandProcessor opt = (OperationCommandProcessor) this.operationCommands.get(processName.toUpperCase());
+			Thread sys = ((SystemCommandProcessor) this.systemCommands.get(processName.toUpperCase())).getProcessingThread();
+			Thread opt = ((OperationCommandProcessor) this.operationCommands.get(processName.toUpperCase())).getProcessingThread();
 
 			if(sys != null)
 			{	
@@ -412,28 +411,27 @@ public class GenericProg
 		}
 	}
 	
-	public String status(String processName) throws Exception
+	public State status(String processName) throws Exception
 	{
 		if(this.isRunning())
 		{
-			SystemCommandProcessor sys = (SystemCommandProcessor) this.systemCommands.get(processName.toUpperCase());
-			OperationCommandProcessor opt = (OperationCommandProcessor) this.operationCommands.get(processName.toUpperCase());
+			Thread sys = ((SystemCommandProcessor) this.systemCommands.get(processName.toUpperCase())).getProcessingThread();
+			Thread opt = ((OperationCommandProcessor) this.operationCommands.get(processName.toUpperCase())).getProcessingThread();
 
 			if(sys != null)
 			{
-				this.log("Status", sys.toString() + " is " + (sys.isAlive() ? "ALIVE" : sys.isInterrupted() ? "INTERRUPTED" : sys.isDaemon() ? "DAEMON" : "DEAD") + " and " + sys.getState().toString(), "Info"); //Should we log the status of the processor?
-
+				this.log("Status", sys.toString() + " is " + (sys.isAlive() ? "ALIVE" : sys.isInterrupted() ? "INTERRUPTED" : sys.isDaemon() ? "DAEMON" : "DEAD") + " and " + sys.getState(), "Info"); //Should we log the status of the processor?
+				return sys.getState();
 			}
 			else if(opt != null)
 			{
-				this.log("Status", opt.toString() + " is " + (opt.isAlive() ? "ALIVE" : opt.isInterrupted() ? "INTERRUPTED" : opt.isDaemon() ? "DAEMON" : "DEAD") + " and " + opt.getState().toString(), "Info");
+				this.log("Status", opt.toString() + " is " + (opt.isAlive() ? "ALIVE" : opt.isInterrupted() ? "INTERRUPTED" : opt.isDaemon() ? "DAEMON" : "DEAD") + " and " + opt.getState(), "Info");
+				return opt.getState();
 			}
 			else
 			{
 				throw new Exception("Unexpected command: " + processName);
 			}
-			
-			return sys.getState().toString();
 		}
 		else
 		{
@@ -470,6 +468,8 @@ public class GenericProg
 		//Create generic programs
 		GenericProg prog = new GenericProg(config, source, destination);
 		GenericProg dummy = new GenericProg(config, source, destination); //Tests for accidental multiprogram execution
+		
+		prog.setOperationCommand("Do", new PerformDoCommandProcessor(prog)); //Dummy processor; used for testing Pause and Resume
 			
 		//Since there are concurrent thread, we can make the current thread sleep to partially synchronize the threads (arbitrary, but cleans up the display)
 		try
@@ -490,7 +490,7 @@ public class GenericProg
 		System.out.println("==============");
 		
 		//Test
-		while(prog.isRunning() || dummy.isRunning())
+		while(true)
 		{
 			//Initialize message command
 			CommandServiceMessage commander = new CommandServiceMessage();
@@ -532,16 +532,5 @@ public class GenericProg
 			
 			System.out.println("==============");
 		}
-		
-		try
-		{
-			Thread.sleep(1000);
-		}
-		catch (InterruptedException e)
-		{
-			e.printStackTrace();
-		}
-		keyboard.close();
-		System.exit(1);
 	}
 }

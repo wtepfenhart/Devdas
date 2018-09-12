@@ -1,6 +1,6 @@
 package commandservice;
 
-public class PerformDoCommandProcessor extends SystemCommandProcessor
+public class PerformDoCommandProcessor extends OperationCommandProcessor
 {
 	public PerformDoCommandProcessor(GenericProg program)
 	{

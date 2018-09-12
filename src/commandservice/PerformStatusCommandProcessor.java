@@ -23,7 +23,7 @@ public class PerformStatusCommandProcessor extends SystemCommandProcessor
 			}
 			else
 			{
-				command.setExplanation(getProgram().status(command.getExplanation()));
+				command.setExplanation(getProgram().status(command.getExplanation()).toString());
 			}
 		}
 		else
