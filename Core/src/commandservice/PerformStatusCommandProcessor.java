@@ -8,23 +8,16 @@ package commandservice;
  */
 public class PerformStatusCommandProcessor extends SystemCommandProcessor
 {	
-	public PerformStatusCommandProcessor(GenericProg program)
+	public PerformStatusCommandProcessor(DevdasCore program)
 	{
 		super(program);
 	}
 	
 	public void process(CommandServiceMessage command) throws Exception
 	{
-		if(command.getExplanation() != null)
+		if(command.getParam("Explanation") != null)
 		{
-			if (command.getExplanation().toUpperCase().equals("ALL"))
-			{
-				//TODO Handle "Status All" Case
-			}
-			else
-			{
-				command.setExplanation(getProgram().status(command.getExplanation()).toString());
-			}
+			getProgram().status(command);
 		}
 		else
 		{

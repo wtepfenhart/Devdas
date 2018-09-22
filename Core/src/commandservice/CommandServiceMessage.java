@@ -1,5 +1,7 @@
 package commandservice;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -23,37 +25,68 @@ public class CommandServiceMessage
     /**
      * Criteria
      * 
-     * @param cmdID Command identifier
-     * @param src Source of command
-     * @param dest Destination of command
+     * @param CommandID Command identifier
+     * @param Source Source of message
+     * @param Destination Destination of message
      * @param cmd Command
      * @param resp Response
      * @param exp Explanation (if error)
      */
-    private String cmdID, src, dest, cmd, resp, exp;
+    private Map<String, String> param = new HashMap<String, String>();
+    private String t;
     
     /**
      * Default constructor
      */
     public CommandServiceMessage()
     {
-    	this.cmdID = String.valueOf(ID++);
+    	this.t = "Command";
+    	
+    	param.put("CommandID", String.valueOf(ID++));
+    	param.put("Source", "");
+    	param.put("Destination", "");
+    	param.put("Command", "");
+    	param.put("Response", "");
+    	param.put("Explanation", "");
     }
     
     /**
      * @param JSONObject JSON object to be read
      */
     public CommandServiceMessage(JSONObject j)
-    {   
+    {
+    	param.put("CommandID", "");
+    	param.put("Source", "");
+    	param.put("Destination", "");
+    	param.put("Command", "");
+    	param.put("Response", "");
+    	param.put("Explanation", "");
+    	
     	this.read(j);
     }
     
-    /**
-     * @param jsonStr JSON string to be read
-     */
     public CommandServiceMessage(String jsonStr)
-    {   
+    {
+    	param.put("CommandID", "");
+    	param.put("Source", "");
+    	param.put("Destination", "");
+    	param.put("Command", "");
+    	param.put("Response", "");
+    	param.put("Explanation", "");
+    	
     	this.read(jsonStr);
+    }
+    
+    public CommandServiceMessage(CommandServiceMessage command)
+    {
+	    param.put("CommandID", "");
+		param.put("Source", "");
+		param.put("Destination", "");
+		param.put("Command", "");
+		param.put("Response", "");
+		param.put("Explanation", "");
+    	
+    	this.read(command);
     }
     
     /**
@@ -62,14 +95,17 @@ public class CommandServiceMessage
      * 
      * @param j JSONObject to be read
      */
-    public void read(JSONObject j)
-    {	
-    	this.setCommandID((String) j.get("CID"));
-    	this.setSource((String) j.get("Source"));
-        this.setDestination((String) j.get("Destination"));
-        this.cmd = (j.get("Command") == null || ((String) j.get("Command")).equals("")) ? null : (String) j.get("Command");
-        this.setResponse((String) j.get("Response"));
-        this.setExplanation((String) j.get("Explanation"));
+	public void read(JSONObject jo)
+    {
+    	this.t = jo.get("Type") == null ? "Command" : (String) jo.get("Type");
+    	Object[] key = jo.keySet().toArray();
+    	Object[] value = jo.values().toArray();
+    	
+    	param.put((String) key[0], (String) value[0]); //Type
+    	for (int i = 0; i < ((Map) value[1]).keySet().toArray().length; i++)
+    	{
+    		param.put((String) key[1], (String) ((Map) value[1]).values().toArray()[i]); //TODO CRITICAL ERROR; value[i] is not a String, but a Map
+    	}
     }
     
 	/**
@@ -85,7 +121,8 @@ public class CommandServiceMessage
 		
 		try
 		{
-			o = parser.parse(jsonStr); //Captures key-value pair in Object o
+			//Capture key-value pair in Object o
+			o = (JSONObject) parser.parse(jsonStr);
 			
 			JSONObject j = (JSONObject) o;
 			
@@ -93,42 +130,16 @@ public class CommandServiceMessage
 		}
 		catch (ParseException e)
 		{
+			e.printStackTrace();
 			System.err.println("Unknown message format: " + jsonStr +"\n");
 			System.err.println("Usage:");
 			System.err.println("\t{\"CID\": [commandID], \"Source\": [source], \"Destination\": [destination], \"Command\": [command], \"Response\": [response], \"Explanation\": [explanation]}");
 		}
     }
     
-    /**
-     * Reads a string which is set to a specific key for each expected key-value mapping. If the value is
-     * null or an empty string (""), the value of the parameter is set to null.
-     * 
-     * @param jsonStr JSON string to be read
-     * @deprecated Does not set the class-level variable cmdID upon method call. Use {@link #read(JSONObject)} or {@link #read(String)} instead.
-     */
-    @Deprecated
-    public void read(String key, String value)
+    public void read(CommandServiceMessage command)
     {
-    	switch (key.toLowerCase())
-    	{
-            case "source":
-                this.setSource(value);
-                break;
-            case "destination":
-                this.setDestination(value);
-                break;
-            case "command":
-            	this.cmd = (value == null || value.equals("")) ? null : value;
-                break;
-            case "response":
-                this.setResponse(value);
-                break;
-            case "explanation":
-                this.setExplanation(value);
-                break;
-            default:
-                break;
-        }
+    	read(command.toJSONString());
     }
     
     @Override
@@ -151,98 +162,65 @@ public class CommandServiceMessage
     {
         JSONObject j = new JSONObject();
         
-        j.put("CID", cmdID);
-        j.put("Source", src);
-        j.put("Destination", dest);
-        j.put("Command", cmd);
-        j.put("Response", resp);
-        j.put("Explanation", exp);
+        j.put("Type", t);
+        j.put("Parameters", param);
         
         return j.toJSONString();
     }
     
-    public boolean hasResponse()
+    public boolean isResponse()
     {
-        return !(resp == null || resp.equals(""));
+        return t.equals("Response");
     }
     
-    public boolean hasCommand()
+    public boolean isCommand()
     {
-        return !(cmd == null || cmd.equals(""));
+        return t.equals("Command");
+    }
+    
+    public boolean isBroadcast()
+    {
+    	return t.equals("Broadcast");
+    }
+    
+    public boolean isNone()
+    {
+    	return !(isResponse() && isCommand() && isBroadcast());
     }
     
 ////////////////////////////*SETTERS*////////////////////////////
-    private void setCommandID(String cmdID) //Used by .read()
-    {
-		this.cmdID = (cmdID == null || cmdID.equals("")) ? null : cmdID;
-	}
-    
-    public void setSource(String src)
-    {
-    	this.src = (src == null || src.equals("")) ? null : src;
-    }
-    
-    public void setDestination(String dest)
-    {
-    	this.dest = (dest == null || dest.equals("")) ? null : dest;
-    }
-    
-    public void setResponse(String resp)
-    {
-        this.resp = (resp == null || resp.equals("")) ? null : resp;
-    }
-    
-    public void setExplanation(String exp)
-    {
-        this.exp = (exp == null || exp.equals("")) ? null : exp;
-    }
-    
-    public void setCommand(String cmd)
-    {	
-    	if (cmd == null || cmd.equals(""))
+    public void addParam(String key, String value)
+    {		
+    	switch(key)
     	{
-    		this.cmd = null;
-    	}
-    	else
-    	{
-    		if (this.cmd != null)
-    		{
-    			this.cmdID = String.valueOf(ID++);
-    		}
-    		
-    		this.cmd = cmd;
+    		case "Source":
+    			this.param.put(key, (value == null) ? "" : value);
+    			break;
+    		case "Destination":
+    			this.param.put(key, (value == null) ? "" : value);
+    			break;
+    		case "Command":    			
+    			if (value != null)
+    	    	{
+    	    		param.put("CommandID", String.valueOf(ID++));
+    	    	}
+    			this.param.put(key, (value == null) ? "" : value);
+    			break;
+    		case "Response":
+    			this.param.put(key, (value == null) ? "" : value);
+    			break;
+    		case "Explanation":
+    			this.param.put(key, (value == null) ? "" : value);
+    			break;
+    		default:
+    			this.param.put(key, (value == null) ? "" : value);
     	}
     }
     
 ////////////////////////////*GETTERS*////////////////////////////
-    public String getResponse()
+    public String getParam(String key)
     {
-        return resp;
-    }
-    
-    public String getCommandID()
-    {
-    	return cmdID;
-    }
-    
-    public String getDestination()
-    {
-        return dest;
-    }
-    
-    public String getSource()
-    {
-        return src;
-    }
-    
-    public String getCommand()
-    {
-        return cmd;
-    }
-    
-    public String getExplanation()
-    {
-        return exp;
+    	return this.param.get(key);
     }
     
     /**
@@ -271,21 +249,21 @@ public class CommandServiceMessage
         System.out.println("Com1: " + commander1);
         System.out.println("Com2: " + commander2);
         
-        commander1.setCommand("Start");
+        commander1.addParam("Command", "Start");
         
         System.out.println("After ---> \tCom1: " + commander1);
         
-        if(commander1.hasCommand())
+        if(commander1.isCommand())
         {
-            System.out.println(commander1.getCommand());
+            System.out.println(commander1.getParam("Command"));
         }
-        else if (commander1.hasResponse())
+        else if (commander1.isResponse())
         {
-            System.out.println(commander1.getResponse());
+            System.out.println(commander1.getParam("Response"));
         }
         else
         {
-            System.out.println("No command nor response in cmd " + commander1.getCommandID());
+            System.out.println("No command nor response in cmd " + commander1.getParam("CommandID"));
         }
     }
 }

@@ -1,14 +1,11 @@
 package commandservice;
 
-import java.lang.Thread.State;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Scanner;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Envelope;
 import devdas.Configuration;
 import devdas.LogPublisher;
-import devdas.LogSubscriber;
 
 /**
  * Generic program that processes commands received by a CommandServiceSubscriber and sends the results through a CommandServicePublisher.
@@ -27,7 +24,7 @@ import devdas.LogSubscriber;
  * Should processors be Threads? Should processors run concurrently (i.e., each processor can operate separately from the others), or should there only be one processor running at any one time (since multi-threading may slow down the machine excessively)?
  * Should a program that has stopped running still be listening to messages being sent (since another program may request this program to start again)? 
  */
-public class GenericProg
+public abstract class DevdasCore
 {
 		@SuppressWarnings("unused")
 	private Configuration configuration; //Initializes RabbitMQ & exchanges
@@ -39,6 +36,7 @@ public class GenericProg
 	private Map<String, SystemCommandProcessor> systemCommands; //System-wide commands like "Quit", "Start", "Status", "Pause"
 	private Map<String, OperationCommandProcessor> operationCommands; //Individual functions/behaviors of program
 	private boolean running; //Checks to see if program is running (can process commands)
+	private String logLevel; //IS THIS ACTUALLY A STRING?
 	
 	/**
 	 * Creates a new Generic Program set by the Configuration object, and allows the ability to set the Publisher and Subscriber to specific exchanges 
@@ -47,7 +45,7 @@ public class GenericProg
 	 * @param pubExchange Exchange for the Publisher
 	 * @param subExchange Exchange for the Subscriber
 	 */
-	public GenericProg(Configuration config, String pubExchange, String subExchange)
+	public DevdasCore(Configuration config, String pubExchange, String subExchange)
 	{
 		this.configuration = config;
 		this.pubExchange = pubExchange;
@@ -60,7 +58,7 @@ public class GenericProg
 /***FIX***/	this.setSystemCommand("Resume", new PerformResumeCommandProcessor(this)); //Allows a processor to continue processing after it has been paused
 			this.setSystemCommand("Start", new PerformStartCommandProcessor(this)); //Starts a program after it has been stopped
 /***FIX***/	this.setSystemCommand("Pause", new PerformPauseCommandProcessor(this)); //Temporarily halts a processor from processing a command
-			this.setSystemCommand("Log", new PerformLogCommandProcessor(this)); //Sends a log message
+			this.setSystemCommand("Log", new PerformSetLogLevelCommandProcessor(this)); //Sends a log message
 			//TODO Other system commands
 		this.operationCommands = new HashMap<String, OperationCommandProcessor>(); //Intentionally left blank by default
 		this.pub = new CommandServicePublisher(config, pubExchange);
@@ -76,6 +74,7 @@ public class GenericProg
 		};
 			
 		this.logger = new LogPublisher(config, config.getLogExchange());
+		this.logLevel = "Info";
 		
 		pub.start();
 		logger.start();
@@ -88,12 +87,12 @@ public class GenericProg
 	 * 
 	 * @param config Configuration object to set
 	 */
-	public GenericProg(Configuration config)
+	public DevdasCore(Configuration config)
 	{
 		this(config, config.getExchange(), config.getOperationExchange());
 	}
 	
-	public GenericProg(Configuration config, String[] commands, OperationCommandProcessor[] opProcessors)
+	public DevdasCore(Configuration config, String[] commands, OperationCommandProcessor[] opProcessors)
 	{
 		this(config);
 		
@@ -114,24 +113,12 @@ public class GenericProg
 		
 		if(msg != null)
 		{	
-			if(!msg.hasResponse() && msg.getDestination().equalsIgnoreCase(this.toString()))
-			{
-				this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process command " + msg.getCommandID(), "Info");
-					
+			if(msg.isCommand())
+			{		
 				processCommand(msg);
 					
 				//Notify source with results of processing
 				sendMessage(msg);
-					
-				//TODO Error logging; should the individual command processor issue the log message?
-				if(msg.getResponse().equals("Failure"))
-				{
-					this.logger.sendLogMessage("Error", this.toString() + " unable to process command " + msg.getCommandID(), "High");
-				}
-				else
-				{
-					this.logger.sendLogMessage("Success" , this.toString() + " successfully processed command " + msg.getCommandID(), "Info");
-				}
 			}
 				
 			msg = null; //Resets message to avoid infinite loop
@@ -170,39 +157,44 @@ public class GenericProg
 	 */
 	public boolean processCommand(CommandServiceMessage msg) //Will this method ever be changed or used outside of this generic?
 	{
-		msg.setDestination(msg.getSource());
-		msg.setSource(this.toString());
-		String currentID = msg.getCommandID();
+		msg.addParam("Destination", msg.getParam("Source"));
+		msg.addParam("Source", this.toString());
+		String currentID = msg.getParam("CommandID");
 
-		if(msg.hasCommand())
+		if(msg.isCommand())
 		{
-			if (systemCommands.get(msg.getCommand().toUpperCase()) != null) //Should system commands have priority over operation commands?
+			if (systemCommands.get(msg.getParam("Command").toUpperCase()) != null) //Should system commands have priority over operation commands?
 			{
-				systemCommands.get(msg.getCommand().toUpperCase()).execute(msg);
+				systemCommands.get(msg.getParam("Command").toUpperCase()).execute(msg);
 			}
-			else if(operationCommands.get(msg.getCommand().toUpperCase()) != null)
+			else if(operationCommands.get(msg.getParam("Command").toUpperCase()) != null)
 			{
-				operationCommands.get(msg.getCommand().toUpperCase()).execute(msg);
+				operationCommands.get(msg.getParam("Command").toUpperCase()).execute(msg);
 			}
 			else
 			{
-				msg.setResponse("Failure");
-				msg.setExplanation("Unexpected command: " + msg.getCommand().toUpperCase());
+				msg.addParam("Response", "Failure");
+				msg.addParam("Explanation", "Unexpected command: " + msg.getParam("Command").toUpperCase());
 			}
 		}
 		else
 		{
-			msg.setResponse("Failure");
-			msg.setExplanation("No command");
+			msg.addParam("Response","Failure");
+			msg.addParam("Explanation", "No command");
 		}
 
 		//Resets command field if the command has not been reissued; prevents accidental re-execution between programs
-		if (msg.getCommandID().equals(currentID))
+		if (msg.getParam("CommandID").equals(currentID))
 		{
-			msg.setCommand(null);
+			msg.addParam("CurrentID", null);
 		}
 		
 		return isRunning();
+	}
+	
+	public void sendLogMessage(String event, String message, String severity)
+	{
+		this.logger.sendLogMessage(event, message, severity);
 	}
 	
 	/**
@@ -233,17 +225,27 @@ public class GenericProg
 	/**
 	 * @return Returns a list of the current commands within the known system commands
 	 */
-	public String getSystemCommands()
+	public String getSystemCommandsList()
 	{
 		return systemCommands.keySet().toString();
+	}
+	
+	public SystemCommandProcessor getSystemCommand(String processName)
+	{
+		return systemCommands.get(processName);
 	}
 	
 	/**
 	 * @return Returns a list of the current commands within the known operation commands
 	 */
-	public String getOperationCommands()
+	public String getOperationCommandsList()
 	{
 		return operationCommands.keySet().toString();
+	}
+	
+	public OperationCommandProcessor getOperationCommand(String processName)
+	{
+		return operationCommands.get(processName);
 	}
 	
 	/**
@@ -260,15 +262,15 @@ public class GenericProg
 	/**
 	 * Handles sending a log message to the log exchange associated with the program; used by processors)
 	 * 
-	 * Will throw an exception if the log message cannot be sent
-	 * 
-	 * @param evnt The general type of message to be sent
-	 * @param msg A description of the event or any extraneous information associated with the event
-	 * @param severity The level of importance that this event should possess
+	 * Will throw an exception if the log level cannot be set
 	 */
-	public void log(String evnt, String msg, String severity) throws Exception
+	public void setLogLevel(CommandServiceMessage command) throws Exception
 	{
-		logger.sendLogMessage(evnt, msg, severity);
+		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process SetLogLevel command", "Info");
+		
+		this.logLevel = command.getParam("Explanation");
+		
+		this.logger.sendLogMessage("Success", "Successfully processed Exit Command", "Info");
 	}
 	
 	/**
@@ -276,8 +278,14 @@ public class GenericProg
 	 * 
 	 * Will throw an exception if it cannot exit out of the application
 	 */
-	public void exit() throws Exception
+	public void exit(CommandServiceMessage command) throws Exception
 	{
+		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Exit command", "Info");
+		
+		this.logger.sendLogMessage("Success", "Successfully processed Exit Command", "Info");
+		
+		Thread.sleep(5);
+		
 		System.exit(1);
 	}
 	
@@ -286,17 +294,22 @@ public class GenericProg
 	 * 
 	 * Will throw an exception if the program cannot stop
 	 */
-	public void stop() throws Exception
+	public void stop(CommandServiceMessage command) throws Exception
 	{
+		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Stop command", "Info");
+		
 		if(this.isRunning())
 		{
 			this.setRunning(false);
-			this.pub.setRunning(false);
-			this.logger.setRunning(false);
+			
+			this.logger.sendLogMessage("Success", "Successfully processed Stop command", "Info");
 		}
 		else
 		{
-			throw new Exception(this.toString() + "is no longer running");
+			this.logger.sendLogMessage("Failure", "Unable to process Stop command", logLevel);
+			
+			command.addParam("Response", "Failure");
+			command.addParam("Expalantion", this.toString() + " has already stopped");
 		}
 	}
 	
@@ -305,17 +318,22 @@ public class GenericProg
 	 * 
 	 * Will throw an exception if it cannot start the program
 	 */
-	public void start() throws Exception
+	public void start(CommandServiceMessage command) throws Exception
 	{
+		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Start command", "Info");
+		
 		if(this.isRunning())
 		{
-			throw new Exception(this.toString() + " is already running"); //Cannot start a program that is already running
+			this.logger.sendLogMessage("Failure", "Unable to process Start command", logLevel);
+			
+			command.addParam("Response", "Failure");
+			command.addParam("Explanation", this.toString() + " has already started");
 		}
 		else
 		{
 			this.setRunning(true);
-			this.pub.setRunning(true);
-			this.logger.setRunning(true);
+			
+			this.logger.sendLogMessage("Success", "Successfully processed Start command", "Info");
 		}
 	}
 	
@@ -326,37 +344,9 @@ public class GenericProg
 	 * 
 	 * @param processName Identifier for the process
 	 */
-	@SuppressWarnings("deprecation")
-	public void pause(String processName) throws Exception //TODO Need to fix
+	public void pause(CommandServiceMessage command) throws Exception //TODO Need to fix
 	{
-		if(this.isRunning())
-		{
-			Thread sys = ((SystemCommandProcessor) this.systemCommands.get(processName.toUpperCase())).getProcessingThread();
-			Thread opt = ((OperationCommandProcessor) this.operationCommands.get(processName.toUpperCase())).getProcessingThread();
-
-			if(sys != null)
-			{	
-				if(sys.getState().equals(State.RUNNABLE))
-				{
-					sys.suspend(); //TODO Need to fix
-				}
-			}
-			else if(opt != null)
-			{	
-				if(opt.getState().equals(State.RUNNABLE))
-				{
-					opt.suspend(); //TODO Need to fix
-				}
-			}
-			else
-			{
-				throw new Exception("Cannot pause " + processName); //Cannot pause something that doesn't exist or that isn't already running
-			}
-		}
-		else
-		{
-			throw new Exception(this.toString() + "is no longer running");
-		}
+		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Pause command", "Info");
 	}
 	
 	/**
@@ -364,11 +354,9 @@ public class GenericProg
 	 * 
 	 * Will throw an exception if it cannot retrieve the running state
 	 */
-	public String report() throws Exception //Should this method still be able to send out a message to the logger even if the program has stopped?
+	public void report(CommandServiceMessage command) throws Exception //Should this method still be able to send out a message to the logger even if the program has stopped?
 	{
-		this.log("Report", this.toString() + " is " + (this.isRunning() ? "RUNNING" : "NOT RUNNING"), "Info"); //TODO Refactor "not running" to something more succinct
-		
-		return this.isRunning() ? "RUNNING" : "NOT RUNNING";
+		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Report command", "Info");
 	}
 	/**
 	 * Handles resuming a process after it has been paused
@@ -377,160 +365,20 @@ public class GenericProg
 	 * 
 	 * @param processName Identifier for the process
 	 */
-	@SuppressWarnings("deprecation")
-	public void resume(String processName) throws Exception //TODO Need to fix
+	public void resume(CommandServiceMessage command) throws Exception //TODO Need to fix
 	{
-		if(this.isRunning())
-		{
-			Thread sys = ((SystemCommandProcessor) this.systemCommands.get(processName.toUpperCase())).getProcessingThread();
-			Thread opt = ((OperationCommandProcessor) this.operationCommands.get(processName.toUpperCase())).getProcessingThread();
-
-			if(sys != null)
-			{	
-				if(!sys.getState().equals(State.RUNNABLE))
-				{
-					sys.resume(); //TODO Need to fix
-				}
-
-			}
-			else if(opt != null)
-			{	
-				if(!opt.getState().equals(State.RUNNABLE))
-				{
-					opt.resume(); //TODO Need to fix
-				}
-			}
-			else
-			{
-				throw new Exception("Cannot resume " + processName); //Cannot start something that doesn't exist or that is already running
-			}
-		}
-		else
-		{
-			throw new Exception(this.toString() + "is no longer running");
-		}
+		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Resume command", "Info");
 	}
 	
-	public State status(String processName) throws Exception
+	public void status(CommandServiceMessage command) throws Exception
 	{
-		if(this.isRunning())
-		{
-			Thread sys = ((SystemCommandProcessor) this.systemCommands.get(processName.toUpperCase())).getProcessingThread();
-			Thread opt = ((OperationCommandProcessor) this.operationCommands.get(processName.toUpperCase())).getProcessingThread();
-
-			if(sys != null)
-			{
-				this.log("Status", sys.toString() + " is " + (sys.isAlive() ? "ALIVE" : sys.isInterrupted() ? "INTERRUPTED" : sys.isDaemon() ? "DAEMON" : "DEAD") + " and " + sys.getState(), "Info"); //Should we log the status of the processor?
-				return sys.getState();
-			}
-			else if(opt != null)
-			{
-				this.log("Status", opt.toString() + " is " + (opt.isAlive() ? "ALIVE" : opt.isInterrupted() ? "INTERRUPTED" : opt.isDaemon() ? "DAEMON" : "DEAD") + " and " + opt.getState(), "Info");
-				return opt.getState();
-			}
-			else
-			{
-				throw new Exception("Unexpected command: " + processName);
-			}
-		}
-		else
-		{
-			throw new Exception(this.toString() + "is no longer running");
-		}
+		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Status command", "Info");
 	}
 	
-	public void doSomething() throws Exception
+	public void doSomething(CommandServiceMessage command) throws Exception
 	{
-		System.err.println("DOING SOMETHING");
-		Thread.sleep(10000);
+		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Do command", "Info");
 	}
 
 ////////////////////////////*END OF METHODS USED BY COMMAND PROCESSORS*////////////////////////////
-	
-	/**
-	 * Used for debugging and testing the class code
-	 * 
-	 * @param args - command line arguments
-	 */
-	// TODO replace with junit testing
-	public static void main(String[] args)
-	{
-		final Scanner keyboard = new Scanner(System.in);
-		String source = "Keyboard", destination = "Program";
-		
-		Configuration config = new Configuration(args);
-		CommandServicePublisher userPub = new CommandServicePublisher(config, destination);
-		CommandServiceSubscriber userSub = new CommandServiceSubscriber(config, source);
-			@SuppressWarnings("unused")
-		LogSubscriber logger = new LogSubscriber(config, "Logging");
-			userPub.start();
-			
-		//Create generic programs
-		GenericProg prog = new GenericProg(config, source, destination);
-		GenericProg dummy = new GenericProg(config, source, destination); //Tests for accidental multiprogram execution
-		
-		prog.setOperationCommand("Do", new PerformDoCommandProcessor(prog)); //Dummy processor; used for testing Pause and Resume
-			
-		//Since there are concurrent thread, we can make the current thread sleep to partially synchronize the threads (arbitrary, but cleans up the display)
-		try
-		{
-			Thread.sleep(1000);
-		}
-		catch (InterruptedException e)
-		{
-			e.printStackTrace();
-		}
-		
-		System.out.println("==============");
-		
-		System.out.println("Known commands are listed below:");
-			System.out.println("\tSYSTEM COMMANDS: " + prog.getSystemCommands());
-			System.out.println("\tOPERATION COMMANDS: " + prog.getOperationCommands());
-		
-		System.out.println("==============");
-		
-		//Test
-		while(true)
-		{
-			//Initialize message command
-			CommandServiceMessage commander = new CommandServiceMessage();
-				commander.setSource(userSub.toString());
-				commander.setDestination(prog.toString());
-				System.out.println("\tCreated new commander: " + commander.toJSONString());
-				
-			System.out.println("--------------");
-			
-			//Ask for command
-			System.out.print("Send a command: ");
-				String command = keyboard.nextLine();
-				System.out.println();
-			
-			//Set command and send
-			if(command.contains(" ")) //Command has an option
-			{
-				commander.setCommand(command.substring(0, command.indexOf(" ")));
-				commander.setExplanation(command.substring(command.indexOf(" ") + 1));
-			}
-			else
-			{
-				commander.setCommand(command);
-			}
-			
-			System.out.println(" [" + source + "] Sent " + commander.toJSONString());
-				userPub.setMessage(commander);
-			
-			System.out.println("--------------");
-			
-			try
-			{
-				Thread.sleep(1000);
-			}
-			catch (InterruptedException e)
-			{
-				e.printStackTrace();
-			}
-			
-			System.out.println("==============");
-		}
-	}
 }

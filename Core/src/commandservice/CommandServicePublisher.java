@@ -2,9 +2,7 @@ package commandservice;
 
 import devdas.Configuration;
 import devdas.ExchangePublisher;
-
 import java.util.Scanner;
-
 import org.json.simple.JSONObject;
 
 /**
@@ -42,8 +40,7 @@ public class CommandServicePublisher extends ExchangePublisher
     @Override
     public void setMessage(String jsonMsg)
     {
-    	CommandServiceMessage cmd = new CommandServiceMessage();
-    	cmd.read(jsonMsg);
+    	CommandServiceMessage cmd = new CommandServiceMessage(jsonMsg);
     	
         super.setMessage(cmd.toJSONString());
     }
@@ -81,10 +78,10 @@ public class CommandServicePublisher extends ExchangePublisher
         //Allow user interaction
         Scanner scanner = new Scanner(System.in);
 		CommandServiceMessage command = new CommandServiceMessage();
-			command.setCommand(scanner.nextLine());
+			command.addParam("Command", scanner.nextLine());
 			cmdSender.setMessage(command);
 			
-			command.setCommand(scanner.nextLine());
+			command.addParam("Command", scanner.nextLine());
 			cmdSender.setMessage(command);
         
         //Terminate

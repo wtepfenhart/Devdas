@@ -11,15 +11,13 @@ package commandservice;
  */
 public class PerformExitCommandProcessor extends SystemCommandProcessor
 {
-	public PerformExitCommandProcessor(GenericProg program)
+	public PerformExitCommandProcessor(DevdasCore program)
 	{
 		super(program);
 	}
 	
 	public void process(CommandServiceMessage command) throws Exception
 	{
-		getProgram().exit();
-		
-		command.setExplanation("Received Exit Command"); //Unnecessary, since the command will not be read after exiting
+		getProgram().exit(command);
 	}
 }

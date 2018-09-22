@@ -26,18 +26,18 @@ public class CommandServiceSubscriber extends ExchangeSubscriber
     	this.msg = new CommandServiceMessage(message);
     	this.tempMsg = msg;
 
-    	if (msg.hasResponse() && msg.getDestination().equalsIgnoreCase(this.toString()))
+    	if (msg.isResponse())
     	{
     		//TODO Response handling
-    		switch (msg.getResponse())
+    		switch (msg.getParam("Response"))
     		{
 				case "Failure":
 					System.out.println("***FAILURE***");
-					System.out.println("Could not execute command " + msg.getCommandID() + " because '" + msg.getExplanation() + "'");
+					System.out.println("Could not execute command " + msg.getParam("CommandID") + " because '" + msg.getParam("Explanation") + "'");
 					break;
 				case "Success":
 					System.out.println("***SUCCESS***");
-					System.out.println(msg.getExplanation());
+					System.out.println(msg.getParam("Explanation"));
 					break;
 				default:
 					System.out.println("Unknown Response"); //Should we throw an error here instead? Or just ignore this case?

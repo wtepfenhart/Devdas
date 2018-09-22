@@ -8,29 +8,20 @@ package commandservice;
  */
 public class PerformResumeCommandProcessor extends SystemCommandProcessor
 {
-	public PerformResumeCommandProcessor(GenericProg program)
+	public PerformResumeCommandProcessor(DevdasCore program)
 	{
 		super(program);
 	}
 
 	public void process(CommandServiceMessage command) throws Exception
 	{
-		if(command.getExplanation() != null)
+		if(command.getParam("Explanation") != null)
 		{
-			if(command.getExplanation().toUpperCase() == "ALL")
-			{
-				//TODO Handle "Start All" Case
-			}
-			else
-			{
-				getProgram().resume(command.getExplanation());
-			}
+			getProgram().resume(command);
 		}
 		else
 		{
 			throw new Exception("No command");
 		}
-		
-		command.setExplanation("Received Resume Command"); //Self-explanatory; probably should replace with something more meaningful
 	}
 }

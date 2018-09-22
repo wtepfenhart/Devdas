@@ -12,10 +12,10 @@ package commandservice;
  */
 public abstract class SystemCommandProcessor implements CommandProcessor
 {
-	private GenericProg program;
+	private DevdasCore program;
 	private Thread processingThread;
 	
-	public SystemCommandProcessor(GenericProg program)
+	public SystemCommandProcessor(DevdasCore program)
 	{
 		this.program = program;
 		this.processingThread = new Thread(this.getClass().toString());
@@ -25,25 +25,21 @@ public abstract class SystemCommandProcessor implements CommandProcessor
 	{	
 		try
 		{
-			processingThread.start();
-				process(command);
-			processingThread.stop();
-			
-			command.setResponse("Success");
+			process(command);
 		}
 		catch(Exception e)
 		{
-			command.setResponse("Failure");
-			command.setExplanation(e.toString());
+			command.addParam("Response", "Failure");
+			command.addParam("Explanation", e.toString());
 		}
 	}
-	
+
 	/**
 	 * @return Returns the reference to the GenericProgram of this processor
 	 */
-	public GenericProg getProgram()
+	public DevdasCore getProgram()
 	{
-		return this.program;
+		return program;
 	}
 	
 	public Thread getProcessingThread()

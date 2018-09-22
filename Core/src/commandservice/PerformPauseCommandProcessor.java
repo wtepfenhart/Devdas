@@ -8,30 +8,20 @@ package commandservice;
  */
 public class PerformPauseCommandProcessor extends SystemCommandProcessor
 {	
-	public PerformPauseCommandProcessor(GenericProg program)
+	public PerformPauseCommandProcessor(DevdasCore program)
 	{
 		super(program);
 	}
 	
-	@Override
 	public void process(CommandServiceMessage command) throws Exception
 	{
-		if(command.getExplanation() != null)
+		if(command.getParam("Explanation") != null)
 		{
-			if(command.getExplanation().toUpperCase().equals("ALL"))
-			{
-				//TODO Handle "Pause All" Case
-			}
-			else
-			{
-				getProgram().pause(command.getExplanation());
-			}
+			getProgram().pause(command);
 		}
 		else
 		{
 			throw new Exception("No command");
 		}
-		
-		command.setExplanation("Received Pause Command"); //Self-explanatory; probably should replace with something more meaningful
 	}
 }

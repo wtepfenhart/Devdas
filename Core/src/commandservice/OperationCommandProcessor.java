@@ -1,7 +1,5 @@
 package commandservice;
 
-import java.lang.Thread.State;
-
 /**
  * Abstract CommandProcessor class for operation commands; not to be confused with SystemCommandProcessors.
  * These commands handle tasks specific to an individual agent that may require additional operations.
@@ -14,10 +12,10 @@ import java.lang.Thread.State;
  */
 public abstract class OperationCommandProcessor implements CommandProcessor
 {
-	private GenericProg program;
+	private DevdasCore program;
 	private Thread processingThread;
 	
-	public OperationCommandProcessor(GenericProg program)
+	public OperationCommandProcessor(DevdasCore program)
 	{
 		this.program = program;
 		this.processingThread = new Thread(this.getClass().toString());
@@ -27,23 +25,19 @@ public abstract class OperationCommandProcessor implements CommandProcessor
 	{	
 		try
 		{
-			processingThread.start();
-				process(command);
-			processingThread.stop();
-			
-			command.setResponse("Success");
+			process(command);
 		}
 		catch(Exception e)
 		{
-			command.setResponse("Failure");
-			command.setExplanation(e.toString());
+			command.addParam("Response", "Failure");
+			command.addParam("Explanation", e.toString());
 		}
 	}
 
 	/**
 	 * @return Returns the reference to the GenericProgram of this processor
 	 */
-	public GenericProg getProgram()
+	public DevdasCore getProgram()
 	{
 		return program;
 	}
