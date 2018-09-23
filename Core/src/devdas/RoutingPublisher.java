@@ -160,15 +160,15 @@ public class RoutingPublisher extends Thread{
 	public static void main(String[] args) {
 		RoutingPublisher mySender;
 		Configuration config = new Configuration(args);
-		mySender = new RoutingPublisher(config, "Stuff");
+		mySender = new RoutingPublisher(config, "Intention");
 		mySender.start();
-		mySender.setMessage("Test","Hello This is going to fail!");
-		mySender.setMessage("Test", "Second message to send");
+		mySender.setMessage("Speak","Hello This is going to fail!");
+		mySender.setMessage("Speak", "Second message to send");
 		Scanner scanner = new Scanner(System.in);
 		String msg = scanner.nextLine();
 		mySender.setMessage("Log",msg);
 		msg = scanner.nextLine();
-		mySender.setMessage("Test",msg);
+		mySender.setMessage("Speak",msg);
 		try {
 			sleep(10);
 		} catch (InterruptedException e) {
