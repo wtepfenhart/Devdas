@@ -51,7 +51,7 @@ public class Configuration {
 	private String exchange;
 	private String logExchange;
 	private String systemExchange;
-	private String operationExchange;
+	private String agentExchange;
 
 	/**
 	 * @return the ipAddress - the IP Address of the rabbitmq server
@@ -154,15 +154,15 @@ public class Configuration {
 	/**
 	 * @return the operation exchange
 	 */
-	public String getOperationExchange() {
-		return operationExchange;
+	public String getAgentExchange() {
+		return agentExchange;
 	}
 	
 	/**
-	 * @param operationExchange the operation exchange to set
+	 * @param agentExchange the operation exchange to set
 	 */
-	public void setOperationExchange(String operationExchange) {
-		this.operationExchange = operationExchange;
+	public void setAgentExchange(String operationExchange) {
+		agentExchange = operationExchange;
 	}
 	
 	/**
@@ -183,7 +183,7 @@ public class Configuration {
 			exchange = p.getProperty("exchange");
 			logExchange = p.getProperty("logExchange");
 			systemExchange = p.getProperty("systemExchange");
-			operationExchange = p.getProperty("operationExchange");
+			agentExchange = p.getProperty("agentExchange");
 		}
 		catch (Exception e) {
 			System.out.println(e);
@@ -222,13 +222,13 @@ public class Configuration {
 				i++;
 				break;
 			case "-oe":
-				operationExchange = cmd.valueOf("-oe");
+				agentExchange = cmd.valueOf("-ae");
 				i++;
 				break;
 			default:
 				System.out.println("Unknown argument: " + args[i] +"\n");
 				System.out.println("Usage:");
-				System.out.println("\tDevDasMain [-i address] [-u username] [-p password] [-v virtualhost] [-e exchange] [-le logexchange] [-se systemexchange] [-oe operationexchange]");
+				System.out.println("\tDevDasMain [-i address] [-u username] [-p password] [-v virtualhost] [-e exchange] [-le logexchange] [-se systemexchange] [-ae agentexchange]");
 				System.exit(0);
 				break;		
 

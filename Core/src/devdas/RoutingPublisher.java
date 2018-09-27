@@ -3,6 +3,8 @@ import java.util.Scanner;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
+import org.json.simple.JSONObject;
+
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -81,7 +83,7 @@ public class RoutingPublisher extends Thread{
 	 *
 	 */
 	public void run(){  
-		System.out.println("thread is running..."); 
+//		System.out.println("thread is running..."); 
 		running = true;
 		while (running) {
 			try {
@@ -92,13 +94,13 @@ public class RoutingPublisher extends Thread{
 					sleep(10);
 				}
 			} catch (InterruptedException e) {
-				System.out.println("Died in sleep!");
+//				System.out.println("Died in sleep!");
 				// TODO Auto-generated catch block
 				currentThread().interrupt();
 				e.printStackTrace();
 			}
 		}
-		System.out.println("Exiting ExchangePublisher Thread");
+//		System.out.println("Exiting ExchangePublisher Thread");
 	}
 	
 
@@ -158,17 +160,23 @@ public class RoutingPublisher extends Thread{
 	 * @param args
 	 */
 	public static void main(String[] args) {
+		JSONObject a = new JSONObject();
+		a.put("Hello", "Testing");
 		RoutingPublisher mySender;
 		Configuration config = new Configuration(args);
-		mySender = new RoutingPublisher(config, "Intention");
+		mySender = new RoutingPublisher(config, "Agent");
 		mySender.start();
-		mySender.setMessage("Speak","Hello This is going to fail!");
-		mySender.setMessage("Speak", "Second message to send");
+		mySender.setMessage("All",a.toString());
+		a.remove("Hello");
+		a.put("Goodbye", "Testing more");
+		mySender.setMessage("All", a.toString());
 		Scanner scanner = new Scanner(System.in);
 		String msg = scanner.nextLine();
-		mySender.setMessage("Log",msg);
+		a.put("Next", msg);
+		mySender.setMessage("All",a.toString());
 		msg = scanner.nextLine();
-		mySender.setMessage("Speak",msg);
+		a.put("Next", msg);
+		mySender.setMessage("All",a.toString());
 		try {
 			sleep(10);
 		} catch (InterruptedException e) {

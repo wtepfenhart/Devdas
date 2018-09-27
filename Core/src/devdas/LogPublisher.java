@@ -18,6 +18,8 @@ import org.json.simple.JSONObject;
  */
 public class LogPublisher extends ExchangePublisher {
 
+	private String level;
+
 	public LogPublisher(Configuration application, String exch) {
 		super(application, exch);
 	}
@@ -58,6 +60,12 @@ public class LogPublisher extends ExchangePublisher {
 		}
 		//s.sendLogMessage("quit", "Should quit", "High");
 
+	}
+
+	public void setLevel(String string) {
+		// TODO Auto-generated method stub
+		level = string;
+		
 	}
 
 }

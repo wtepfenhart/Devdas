@@ -9,15 +9,17 @@ package commandservice;
  * 
  * @author B-T-Johnson
  */
-public class PerformExitCommandProcessor extends SystemCommandProcessor
+public class ExitCommand implements CommandProcessor
 {
-	public PerformExitCommandProcessor(DevdasCore program)
+	DevdasCore app;
+	
+	public ExitCommand(DevdasCore program)
 	{
-		super(program);
+		app = program;
 	}
 	
-	public void process(CommandServiceMessage command) throws Exception
+	public void execute(CommandMessage command)
 	{
-		getProgram().exit(command);
+		app.exit(command);
 	}
 }

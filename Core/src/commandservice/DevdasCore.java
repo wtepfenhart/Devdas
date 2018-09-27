@@ -1,8 +1,21 @@
 package commandservice;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import devdas.Configuration;
 import devdas.LogPublisher;
@@ -13,31 +26,27 @@ import devdas.LogPublisher;
  * 
  * @author B-T-Johnson
  */
-/*
- * ***MAJOR QUESTIONS***
- * How should processors "talk" to each other (if they need to)? Should processors send a new command through the program? Or should they deal directly with the processor themselves (Right now, all processors can communicate directly with each other, but this isn't very flexible)?
- * How will it know who to talk to/what command to issue? A static Registry within commandProcessor interface, or within GenericProg? Or a whole new Program/ProcessorRegistry class?
- * Can the destination field in CommandService messages be an array (since there may be messages for multiple programs at once)? Or should it just be an Object to allow any type of data through? (PROBLEM: when passed through RabbitMQ, the data can ONLY be written as a String)
- * Will operation commands ever deal with the program directly (i.e., make changes to the behaviors of the program as a whole)? If not, should we change the execute() method to reflect this? **DONE**
- * What do operation commands have in common that system commands don't, and vice versa?
- * How would the registry distinguish between processors? By a ProcessID (a new field in CommandService messages) appended to the command when sent, or by the individual processor when received?
- * Should processors be Threads? Should processors run concurrently (i.e., each processor can operate separately from the others), or should there only be one processor running at any one time (since multi-threading may slow down the machine excessively)?
- * Should a program that has stopped running still be listening to messages being sent (since another program may request this program to start again)? 
- */
 public abstract class DevdasCore
 {
-		@SuppressWarnings("unused")
-	private Configuration configuration; //Initializes RabbitMQ & exchanges
-		@SuppressWarnings("unused")
-	private String pubExchange, subExchange; //Temporary place-holders for the exchanges used by publisher and subscriber; TODO Remove when using Configuration
-	private CommandServicePublisher pub; //Sends messages
-	private CommandServiceSubscriber sub; //Receives messages
-	private LogPublisher logger; //Sends information to log
-	private Map<String, SystemCommandProcessor> systemCommands; //System-wide commands like "Quit", "Start", "Status", "Pause"
-	private Map<String, OperationCommandProcessor> operationCommands; //Individual functions/behaviors of program
-	private boolean running; //Checks to see if program is running (can process commands)
-	private String logLevel; //IS THIS ACTUALLY A STRING?
-	
+	private String hostID;
+	private Configuration configuration; 
+
+	private boolean agentRunning = false;
+	private boolean commandRunning = false;
+
+	private LogPublisher logger; 
+	private CommandServicePublisher commandPublisher; 
+	private AgentServicePublisher agentPublisher; 
+
+	private ArrayList<String> systemRoutes;
+	private ArrayList<String> agentRoutes;
+
+	private Map<String, CommandProcessor> systemCommands;
+	private Map<String, AgentProcessor> agentCommands; 
+
+//	private boolean running; 
+	private String logLevel;
+
 	/**
 	 * Creates a new Generic Program set by the Configuration object, and allows the ability to set the Publisher and Subscriber to specific exchanges 
 	 * 
@@ -45,158 +54,241 @@ public abstract class DevdasCore
 	 * @param pubExchange Exchange for the Publisher
 	 * @param subExchange Exchange for the Subscriber
 	 */
-	public DevdasCore(Configuration config, String pubExchange, String subExchange)
-	{
-		this.configuration = config;
-		this.pubExchange = pubExchange;
-		this.subExchange = subExchange;
-		this.systemCommands = new HashMap<String, SystemCommandProcessor>();
-			this.setSystemCommand("Quit", new PerformStopCommandProcessor(this)); //Are these the same command? Stop only ends a singular program by changing its running variable
-			this.setSystemCommand("Exit", new PerformExitCommandProcessor(this)); // "    "    "   "      "   ? Exit ends the whole application
-			this.setSystemCommand("Status", new PerformStatusCommandProcessor(this)); //Returns the current state of a specific processor
-			this.setSystemCommand("Report", new PerformReportCommandProcessor(this)); //Returns the current state of the program
-/***FIX***/	this.setSystemCommand("Resume", new PerformResumeCommandProcessor(this)); //Allows a processor to continue processing after it has been paused
-			this.setSystemCommand("Start", new PerformStartCommandProcessor(this)); //Starts a program after it has been stopped
-/***FIX***/	this.setSystemCommand("Pause", new PerformPauseCommandProcessor(this)); //Temporarily halts a processor from processing a command
-			this.setSystemCommand("Log", new PerformSetLogLevelCommandProcessor(this)); //Sends a log message
-			//TODO Other system commands
-		this.operationCommands = new HashMap<String, OperationCommandProcessor>(); //Intentionally left blank by default
-		this.pub = new CommandServicePublisher(config, pubExchange);
-		this.sub = new CommandServiceSubscriber(config, subExchange)
-		{
-			@Override
-			public void handleMessage(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, String message)
-			{
-				super.handleMessage(consumerTag, envelope, properties, message);
-				
-				receiveMessage();
-			}
-		};
-			
-		this.logger = new LogPublisher(config, config.getLogExchange());
-		this.logLevel = "Info";
-		
-		pub.start();
-		logger.start();
-		
-		setRunning(true);
-	}
-	
-	/**
-	 * Creates a new Generic Program set by the Configuration object
-	 * 
-	 * @param config Configuration object to set
-	 */
 	public DevdasCore(Configuration config)
 	{
-		this(config, config.getExchange(), config.getOperationExchange());
-	}
-	
-	public DevdasCore(Configuration config, String[] commands, OperationCommandProcessor[] opProcessors)
-	{
-		this(config);
+		// initialize key system data
+		configuration = config;
+		hostID = (UUID.randomUUID()).toString();
+
+		//have to initialize the class variables 
+		CommandMessage.hostID = hostID;
+		AgentMessage.hostID = hostID;
 		
-		for (int i = 0; i < commands.length && i < opProcessors.length; i++) //TODO Check "off-by-one"
-		{
-			this.setOperationCommand(commands[i], opProcessors[i]);
-		}
+		//set up logging
+		logger = new LogPublisher(config, config.getLogExchange());
+		logger.setLevel("System");
+		logger.start();
+		logger.sendLogMessage("Start up", hostID + " started", "System");
+
+		//set up system command functionality
+		
+		systemCommands = new HashMap<String, CommandProcessor>();
+		systemRoutes = new ArrayList<String>();
+		systemRoutes.add(hostID);
+		systemRoutes.add("All");
+		this.initializeSystemCommands();
+		commandPublisher = new CommandServicePublisher(configuration,configuration.getSystemExchange());
+		commandPublisher.start();
+		recieveCommandMessages(configuration.getSystemExchange(),systemRoutes);
+		
+		
+		agentRoutes = initializeAgentTopics();
+		agentRoutes.add(hostID);
+		agentPublisher = new AgentServicePublisher(configuration,configuration.getSystemExchange());
+		agentPublisher.start();
+		recieveAgentMessages(configuration.getAgentExchange(),agentRoutes);
+		commandRunning = true;
+		agentRunning = true;
 	}
 	
+	public abstract ArrayList<String> initializeAgentTopics();
+
 	/**
-	 * Performs the necessary actions to receive a message and begin command processing, as well as notifying the logger of all event cases.
-	 * 
-	 * See {@link #processCommand(CommandServiceMessage)} to see how the message is processed.
+	 * This initializes all of the commands.
 	 */
-	public void receiveMessage() //Will this method ever be changed or used outside of this generic?
-	{
-		CommandServiceMessage msg = sub.consumeMessage();
-		
-		if(msg != null)
-		{	
-			if(msg.isCommand())
-			{		
-				processCommand(msg);
-					
-				//Notify source with results of processing
-				sendMessage(msg);
+	private void initializeSystemCommands() {
+		//Initialize systemCommands
+		systemCommands.put("Start", new StartCommand(this)); 
+		systemCommands.put("Stop", new StopCommand(this));
+		systemCommands.put("Exit", new ExitCommand(this)); 
+		systemCommands.put("Pause", new PauseCommand(this)); 
+		systemCommands.put("Resume", new ResumeCommand(this)); 
+		systemCommands.put("LogLevel", new SetLogLevelCommand(this)); 
+		systemCommands.put("Status", new StatusCommand(this)); 
+		systemCommands.put("Report", new ReportCommand(this)); 
+	}
+
+
+	/**
+	 * This initializes the ability of the program to recieve system commands. Handling the command
+	 * is accomplished by calling the processCommand method.
+	 * 
+	 * @param exch -the exchange for publish/subscribe 
+	 * @param systemRoutes - all of the various keywords for messages that it will recieve
+	 */
+	public void recieveCommandMessages(String exch,ArrayList<String> routes) {
+		ConnectionFactory factory = new ConnectionFactory();
+		factory.setHost(configuration.getIpAddress());
+		factory.setUsername(configuration.getUserName());
+		factory.setPassword(configuration.getUserPassword());
+		factory.setVirtualHost(configuration.getVirtualHost());
+		try {
+			Connection connection = factory.newConnection();
+			Channel channel = connection.createChannel();
+
+			channel.exchangeDeclare(exch, "direct");
+			String queueName = channel.queueDeclare().getQueue();
+			for (String rt : routes) {
+				channel.queueBind(queueName, exch, rt);
 			}
-				
-			msg = null; //Resets message to avoid infinite loop
+
+			System.out.println(" [" + exch + "]" + "\tWaiting for messages.");
+
+			Consumer consumer = new DefaultConsumer(channel) {
+				@Override
+				public void handleDelivery(String consumerTag, Envelope envelope,
+						AMQP.BasicProperties properties, byte[] body) throws IOException {
+					String message = new String(body, "UTF-8");
+					JSONParser parser = new JSONParser();
+					JSONObject json;
+					try {
+						json = (JSONObject) parser.parse(message);
+						CommandMessage msg = new CommandMessage(json);
+						processCommand(msg);
+					} catch (ParseException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			};
+			channel.basicConsume(queueName, true, consumer);
+		}
+		catch (Exception e) {
+			System.out.println(e);
+			e.printStackTrace(System.out);
 		}
 	}
-	
+
 	/**
-	 * Sets a {@link #CommandProcessor} as a value in the system commands to the command key given by the String parameter
+	 * This initializes the ability of the program to recieve system commands. Handling the command
+	 * is accomplished by calling the processCommand method.
 	 * 
-	 * @param command name of the command to be processed
-	 * @param processor name of the CommandProcessor set to the command parameter
+	 * @param exch -the exchange for publish/subscribe 
+	 * @param systemRoutes - all of the various keywords for messages that it will recieve
 	 */
-	public void setSystemCommand(String command, SystemCommandProcessor processor)
-	{
-		systemCommands.put(command.toUpperCase(), processor);
+	public void recieveAgentMessages(String exch,ArrayList<String> routes) {
+		ConnectionFactory factory = new ConnectionFactory();
+		factory.setHost(configuration.getIpAddress());
+		factory.setUsername(configuration.getUserName());
+		factory.setPassword(configuration.getUserPassword());
+		factory.setVirtualHost(configuration.getVirtualHost());
+		try {
+			Connection connection = factory.newConnection();
+			Channel channel = connection.createChannel();
+
+			channel.exchangeDeclare(exch, "direct");
+			String queueName = channel.queueDeclare().getQueue();
+			for (String rt : routes) {
+				channel.queueBind(queueName, exch, rt);
+			}
+
+			System.out.println(" [" + exch + "]" + "\tWaiting for messages.");
+
+			Consumer consumer = new DefaultConsumer(channel) {
+				@Override
+				public void handleDelivery(String consumerTag, Envelope envelope,
+						AMQP.BasicProperties properties, byte[] body) throws IOException {
+					String message = new String(body, "UTF-8");
+					System.out.println(message);
+					JSONParser parser = new JSONParser();
+					JSONObject json;
+					try {
+						json = (JSONObject) parser.parse(message);
+						AgentMessage msg = new AgentMessage(json);
+						processAgentMessage(msg);
+					} catch (ParseException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			};
+			channel.basicConsume(queueName, true, consumer);
+		}
+		catch (Exception e) {
+			System.out.println(e);
+			e.printStackTrace(System.out);
+		}
 	}
-	
+
+
+
+	public abstract void processAgentMessage(AgentMessage msg);
+
 	/**
-	 * Sets a {@link #CommandProcessor} as a value in the operation commands to the command key given by the String parameter
-	 * 
-	 * @param command name of the command to be processed
-	 * @param processor name of the CommandProcessor set to the command parameter
-	 */
-	public void setOperationCommand(String command, OperationCommandProcessor processor)
-	{
-		operationCommands.put(command.toUpperCase(), processor);
-	}
-	
-	/**
-	 * Observes the CommandService object passed to this method for any command that may exist for the object.
-	 * If the command exists within the program, the program will process the command and a success or failure response will be assigned to the CommandService object, depending on the success or failure upon execution.
-	 * Otherwise, no action will be taken, and a failure response and explanation will be assigned.
+	 * Determines the type of command message that was recieved and forwards it to the appropriate
+	 * hanlder for that type. 
 	 * 
 	 * @param msg the CommandService message that contains the command
-	 * @return Returns if the program is running when processing the command
 	 */
-	public boolean processCommand(CommandServiceMessage msg) //Will this method ever be changed or used outside of this generic?
+	private void processCommand(CommandMessage msg) 
 	{
-		msg.addParam("Destination", msg.getParam("Source"));
-		msg.addParam("Source", this.toString());
-		String currentID = msg.getParam("CommandID");
+		switch(msg.getType()){
+		case "Command":
+			handleCommand(msg);
+			break;
+		case "Broadcast":
+			handleBroadcast(msg);
+			break;
+		case "Response":
+			handleResponse(msg);
+			break;
+		default:
+			logger.sendLogMessage("Cmd Msg Error", "Unknown message type: " + msg.getType(), "System");
+			break;		
+		}
+	}
 
-		if(msg.isCommand())
-		{
-			if (systemCommands.get(msg.getParam("Command").toUpperCase()) != null) //Should system commands have priority over operation commands?
-			{
-				systemCommands.get(msg.getParam("Command").toUpperCase()).execute(msg);
-			}
-			else if(operationCommands.get(msg.getParam("Command").toUpperCase()) != null)
-			{
-				operationCommands.get(msg.getParam("Command").toUpperCase()).execute(msg);
-			}
-			else
-			{
-				msg.addParam("Response", "Failure");
-				msg.addParam("Explanation", "Unexpected command: " + msg.getParam("Command").toUpperCase());
-			}
-		}
-		else
-		{
-			msg.addParam("Response","Failure");
-			msg.addParam("Explanation", "No command");
-		}
 
-		//Resets command field if the command has not been reissued; prevents accidental re-execution between programs
-		if (msg.getParam("CommandID").equals(currentID))
-		{
-			msg.addParam("CurrentID", null);
-		}
+/**
+ * This handles messages that are responses to previous commands sent out by the agent. However,
+ * an agent won't be sending commands that demand a reply to other agents or to the system until
+ * a mechanism is set up for direct agent to agent collaborations. Even so, that should be a agent level
+ * communications issue.
+ * 
+ * @param msg
+ */
+	private void handleResponse(CommandMessage msg) {
+		// this is in response to a system command sent out previously
+		// agents shouldn't be doing system command kind of stuff so log it and do nothing
 		
-		return isRunning();
+		logger.sendLogMessage("Messaging Error", "Recieved unexpected response message", "System");
 	}
-	
-	public void sendLogMessage(String event, String message, String severity)
-	{
-		this.logger.sendLogMessage(event, message, severity);
+
+	/**
+	 * This handles the case where something has sent out a broadcast for consumption by the agetns. This might
+	 * be a command to be executed by all agents, such as a status command. For now it will be assumed that it is
+	 * a command. In the future it might be some kind of system setting that gets passed around to the agents.
+	 * 
+	 * @param msg
+	 */
+	private void handleBroadcast(CommandMessage msg) {
+		// check to see if it is actually command that's been broadcast to all agents
+		String cmd = msg.getParam("command");
+		if (cmd != null && !cmd.isEmpty()) {
+			handleCommand(msg);
+			return;
+			}
+		
+		// some other kind of broadcast?? maybe??
 	}
-	
+
+	/**
+	 * This invokes the command processor requested within the command message
+	 * @param msg
+	 */
+	private void handleCommand(CommandMessage msg) {
+		String cmd = msg.getParam("command");
+		
+		// Check to see if there's a command provided in the message
+		if (cmd != null && !cmd.isEmpty()) {
+			CommandProcessor s = systemCommands.get(cmd); //get the commanhd processor for he command
+			if (s!=null) {
+				s.execute(msg);  //use it
+			}
+		}
+	}
+
+
 	/**
 	 * @param running The setter to indicate that the program thread should be running
 	 */
@@ -210,18 +302,18 @@ public abstract class DevdasCore
 		{
 			this.logger.sendLogMessage("Program End", "Ended " + this.toString(), "Info");
 		}
-		
-		this.running = running;
+
+		commandRunning = running;
 	}
-	
+
 	/**
 	 * @return Returns whether the program thread is running
 	 */
 	public boolean isRunning()
 	{
-		return this.running;
+		return this.commandRunning;
 	}
-	
+
 	/**
 	 * @return Returns a list of the current commands within the known system commands
 	 */
@@ -229,113 +321,138 @@ public abstract class DevdasCore
 	{
 		return systemCommands.keySet().toString();
 	}
-	
-	public SystemCommandProcessor getSystemCommand(String processName)
+
+	public CommandProcessor getSystemCommand(String processName)
 	{
 		return systemCommands.get(processName);
 	}
-	
+
 	/**
 	 * @return Returns a list of the current commands within the known operation commands
 	 */
 	public String getOperationCommandsList()
 	{
-		return operationCommands.keySet().toString();
-	}
-	
-	public OperationCommandProcessor getOperationCommand(String processName)
-	{
-		return operationCommands.get(processName);
-	}
-	
-	/**
-	 * Sends a command through the publisher associated with this program as a CommandServiceMessage
-	 * 
-	 * @param cmd The CommandServiceMessage to send
-	 */
-	public void sendMessage(CommandServiceMessage cmd)
-	{
-		pub.setMessage(cmd);
+		return agentCommands.keySet().toString();
 	}
 
-////////////////////////////*METHODS USED BY COMMAND PROCESSORS*////////////////////////////
+	
+	/**
+	 * this returns soemthing, but not sure what it is.
+	 * @param processName
+	 * @return
+	 */
+	public AgentProcessor getOperationCommand(String processName)
+	{
+		return agentCommands.get(processName);
+	}
+
+	
+	
+	/**
+	 * Sends a command through the publisher associated with this program as a CommandMessage
+	 * 
+	 * @param cmd The CommandMessage to send
+	 */
+	public void sendMessage(CommandMessage cmd)
+	{
+		commandPublisher.setMessage(cmd);
+	}
+
+	public void run() {
+		while (true) {
+			while (commandRunning) {
+				while (agentRunning) {
+					agentFunction();
+				}
+				try {
+					Thread.sleep(10);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public abstract void agentFunction();
+
+	////////////////////////////*METHODS USED BY COMMAND PROCESSORS*////////////////////////////
 	/**
 	 * Handles sending a log message to the log exchange associated with the program; used by processors)
 	 * 
 	 * Will throw an exception if the log level cannot be set
 	 */
-	public void setLogLevel(CommandServiceMessage command) throws Exception
+	public void setLogLevel(CommandMessage command)
 	{
-		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process SetLogLevel command", "Info");
-		
-		this.logLevel = command.getParam("Explanation");
-		
-		this.logger.sendLogMessage("Success", "Successfully processed Exit Command", "Info");
+		//			this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process SetLogLevel command", "Info");	
+		//ToDo error checking on this
+		logLevel = command.getParam("logLevel");
+		if (!logLevel.isEmpty() ) {
+			logger.setLevel(logLevel);
+		}
 	}
+
+	
 	
 	/**
 	 * Handles terminating the whole application with no clean-up; used if in case of critical errors
 	 * 
 	 * Will throw an exception if it cannot exit out of the application
 	 */
-	public void exit(CommandServiceMessage command) throws Exception
+	@SuppressWarnings("unused")
+	public void exit(CommandMessage command) 
 	{
-		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Exit command", "Info");
-		
-		this.logger.sendLogMessage("Success", "Successfully processed Exit Command", "Info");
-		
-		Thread.sleep(5);
-		
+		//		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Exit command", "Info");
+
+		//		this.logger.sendLogMessage("Success", "Successfully processed Exit Command", "Info");
+
+		try {
+			Thread.sleep(5);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 		System.exit(1);
 	}
+
+	
 	
 	/**
 	 * Handles terminating an individual program with clean-up
 	 * 
 	 * Will throw an exception if the program cannot stop
 	 */
-	public void stop(CommandServiceMessage command) throws Exception
+	@SuppressWarnings("unused")
+	public void stop(CommandMessage command)
 	{
-		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Stop command", "Info");
-		
-		if(this.isRunning())
-		{
-			this.setRunning(false);
-			
-			this.logger.sendLogMessage("Success", "Successfully processed Stop command", "Info");
-		}
-		else
-		{
-			this.logger.sendLogMessage("Failure", "Unable to process Stop command", logLevel);
-			
-			command.addParam("Response", "Failure");
-			command.addParam("Expalantion", this.toString() + " has already stopped");
-		}
+		//		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Stop command", "Info");
+
+		commandRunning = false;
 	}
+
+	
 	
 	/**
 	 * Handles starting a program if it has been stopped
 	 * 
 	 * Will throw an exception if it cannot start the program
 	 */
-	public void start(CommandServiceMessage command) throws Exception
+	@SuppressWarnings("unused")
+	public void start(CommandMessage command)
 	{
-		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Start command", "Info");
-		
-		if(this.isRunning())
-		{
-			this.logger.sendLogMessage("Failure", "Unable to process Start command", logLevel);
-			
-			command.addParam("Response", "Failure");
-			command.addParam("Explanation", this.toString() + " has already started");
-		}
-		else
-		{
-			this.setRunning(true);
-			
-			this.logger.sendLogMessage("Success", "Successfully processed Start command", "Info");
-		}
+		//		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Start command", "Info");
+
+		commandRunning = true;
 	}
+
+	
 	
 	/**
 	 * Handles temporarily halting an individual process
@@ -344,20 +461,27 @@ public abstract class DevdasCore
 	 * 
 	 * @param processName Identifier for the process
 	 */
-	public void pause(CommandServiceMessage command) throws Exception //TODO Need to fix
+	@SuppressWarnings("unused")
+	public void pause(CommandMessage command)
 	{
-		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Pause command", "Info");
+		agentRunning=false;
+		//		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Pause command", "Info");
 	}
+
+	
 	
 	/**
 	 * Handles sending and returning a notification whether a program is running
 	 * 
 	 * Will throw an exception if it cannot retrieve the running state
 	 */
-	public void report(CommandServiceMessage command) throws Exception //Should this method still be able to send out a message to the logger even if the program has stopped?
+	@SuppressWarnings("unused")
+	public void report(CommandMessage command)
 	{
-		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Report command", "Info");
+		//		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Report command", "Info");
 	}
+	
+	
 	/**
 	 * Handles resuming a process after it has been paused
 	 * 
@@ -365,20 +489,18 @@ public abstract class DevdasCore
 	 * 
 	 * @param processName Identifier for the process
 	 */
-	public void resume(CommandServiceMessage command) throws Exception //TODO Need to fix
+	@SuppressWarnings("unused")
+	public void resume(CommandMessage command)
 	{
-		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Resume command", "Info");
-	}
-	
-	public void status(CommandServiceMessage command) throws Exception
-	{
-		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Status command", "Info");
-	}
-	
-	public void doSomething(CommandServiceMessage command) throws Exception
-	{
-		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Do command", "Info");
+		agentRunning = true;
+		//		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Resume command", "Info");
 	}
 
-////////////////////////////*END OF METHODS USED BY COMMAND PROCESSORS*////////////////////////////
+	@SuppressWarnings("unused")
+	public void status(CommandMessage command)
+	{
+		//			this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Status command", "Info");
+	}
+
+	////////////////////////////*END OF METHODS USED BY COMMAND PROCESSORS*////////////////////////////
 }

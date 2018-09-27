@@ -9,9 +9,9 @@ import org.json.simple.JSONObject;
 /**
  * @author B-T-Johnson
  */
-public class CommandServicePublisher extends RoutingPublisher
+public class AgentServicePublisher extends RoutingPublisher
 {   
-    public CommandServicePublisher(Configuration config, String exch)
+    public AgentServicePublisher(Configuration config, String exch)
     {
         super(config, exch);
     }
@@ -23,16 +23,16 @@ public class CommandServicePublisher extends RoutingPublisher
      */
     public void setMessage(JSONObject msg)
     {
-    	CommandMessage cmd = new CommandMessage();
+    	AgentMessage cmd = new AgentMessage();
     	cmd.read(msg);
     	
     	super.setMessage(cmd.toJSONString(),cmd.getDestination());
     }
     
     /**
-     * @param cmd the CommandService object to set for sending
+     * @param cmd the AgentService object to set for sending
      */
-    public void setMessage(CommandMessage cmd)
+    public void setMessage(AgentMessage cmd)
     {
     	super.setMessage(cmd.toJSONString(), cmd.getDestination());
     }
@@ -47,34 +47,34 @@ public class CommandServicePublisher extends RoutingPublisher
     @SuppressWarnings("unchecked")
 	public static void main(String[] args)
     {
-        CommandServicePublisher cmdSender;
+        AgentServicePublisher cmdSender;
         Configuration config = new Configuration(args);
-        cmdSender = new CommandServicePublisher(config, "Control");
+        cmdSender = new AgentServicePublisher(config, "Control");
         
         //Send first command (as JSONObject)
         cmdSender.start();
         JSONObject first = new JSONObject();
-        	first.put("Command", "First");
+        	first.put("Agent", "First");
         cmdSender.setMessage(first);
 
         //Change exchange
-        cmdSender = new CommandServicePublisher(config, "Testing");
+        cmdSender = new AgentServicePublisher(config, "Testing");
         cmdSender.start();
         
         //Send second message (as JSON String)
         JSONObject speak = new JSONObject();
-        	speak.put("Command", "Speak");
+        	speak.put("Agent", "Speak");
         cmdSender.setMessage(speak.toJSONString(),"All");
         	speak.put("Explanation", "Second message to send");
         cmdSender.setMessage(speak.toJSONString(),"All");
         
         //Allow user interaction
         Scanner scanner = new Scanner(System.in);
-		CommandMessage command = new CommandMessage();
-			command.addParam("Command", scanner.nextLine());
+		AgentMessage command = new AgentMessage();
+			command.addParam("Agent", scanner.nextLine());
 			cmdSender.setMessage(command);
 			
-			command.addParam("Command", scanner.nextLine());
+			command.addParam("Agent", scanner.nextLine());
 			cmdSender.setMessage(command);
         
         //Terminate

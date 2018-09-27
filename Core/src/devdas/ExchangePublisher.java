@@ -36,6 +36,7 @@ import com.rabbitmq.client.ConnectionFactory;
  * functionality of the program. 
  * 
  */
+/* This is the publisher for the SystemCommands */
 public class ExchangePublisher extends Thread{
 	private Configuration configuration;
 	private String exchange;
@@ -57,7 +58,7 @@ public class ExchangePublisher extends Thread{
 	 *
 	 */
 	public void run(){  
-		System.out.println("thread is running..."); 
+//		System.out.println("thread is running..."); 
 		running = true;
 		while (running) {
 			try {
