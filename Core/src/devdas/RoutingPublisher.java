@@ -95,7 +95,6 @@ public class RoutingPublisher extends Thread{
 				}
 			} catch (InterruptedException e) {
 //				System.out.println("Died in sleep!");
-				// TODO Auto-generated catch block
 				currentThread().interrupt();
 				e.printStackTrace();
 			}
@@ -159,6 +158,7 @@ public class RoutingPublisher extends Thread{
 	/**
 	 * @param args
 	 */
+	@SuppressWarnings("unchecked")
 	public static void main(String[] args) {
 		JSONObject a = new JSONObject();
 		a.put("Command", "Test");

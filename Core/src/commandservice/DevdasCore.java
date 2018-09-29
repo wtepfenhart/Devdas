@@ -39,21 +39,20 @@ public abstract class DevdasCore
 	private AgentServicePublisher agentPublisher; 
 
 	private ArrayList<String> systemRoutes;
-	private ArrayList<String> agentRoutes;
+	protected ArrayList<String> agentInterests;
 
 	private Map<String, CommandProcessor> systemCommands;
-	protected Map<String, AgentProcessor> agentCommands; 
+	protected Map<String, AgentReaction> agentReactions; 
 
-//	private boolean running; 
 	private String logLevel;
 
 	
 	
-	public abstract void initializeAgentCommands();
+	public abstract void initializeAgentReactions();
 
-	public abstract ArrayList<String> initializeAgentTopics();
+	public abstract void initializeAgentInterests();
 
-	public abstract void agentFunction();
+	public abstract void agentActivity();
 	
 	/**
 	 * Creates a new Generic Program set by the Configuration object, and allows the ability to set the Publisher and Subscriber to specific exchanges 
@@ -83,18 +82,22 @@ public abstract class DevdasCore
 		systemRoutes = new ArrayList<String>();
 		systemRoutes.add(hostID);
 		systemRoutes.add("All");
-		this.initializeSystemCommands();
+		initializeSystemCommands();
 		commandPublisher = new CommandServicePublisher(configuration,configuration.getSystemExchange());
 		commandPublisher.start();
 		recieveCommandMessages(configuration.getSystemExchange(),systemRoutes);
 		
 		// setup agent command functionality
-		agentRoutes = initializeAgentTopics();
-		agentRoutes.add(hostID);
-		initializeAgentCommands();
+		agentReactions = new HashMap<String, AgentReaction>();
+		agentInterests = new ArrayList<String>();
+		
+		initializeAgentInterests();
+		agentInterests.add("All");
+		agentInterests.add(hostID);
+		initializeAgentReactions();
 		agentPublisher = new AgentServicePublisher(configuration,configuration.getAgentExchange());
 		agentPublisher.start();
-		recieveAgentMessages(configuration.getAgentExchange(),agentRoutes);
+		recieveAgentMessages(configuration.getAgentExchange(),agentInterests);
 		commandRunning = true;
 		agentRunning = true;
 	}
@@ -152,7 +155,6 @@ public abstract class DevdasCore
 						CommandMessage msg = new CommandMessage(json);
 						processSystemCommand(msg);
 					} catch (ParseException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}
@@ -160,7 +162,6 @@ public abstract class DevdasCore
 			channel.basicConsume(queueName, true, consumer);
 		}
 		catch (Exception e) {
-			System.out.println(e);
 			e.printStackTrace(System.out);
 		}
 	}
@@ -200,7 +201,7 @@ public abstract class DevdasCore
 					try {
 						json = (JSONObject) parser.parse(message);
 						AgentMessage msg = new AgentMessage(json);
-						processAgentCommand(msg);
+						processAgentMessage(msg);
 					} catch (ParseException e) {
 						e.printStackTrace();
 					}
@@ -217,9 +218,9 @@ public abstract class DevdasCore
 
 
 	public void processAgentMessage(AgentMessage msg) {
-		String cmd = msg.getParam("Command");
+		String cmd = msg.getTopic("Topic");
 		if (cmd != null && !cmd.isEmpty()) {
-			AgentProcessor s = agentCommands.get(cmd); //get the commanhd processor for he command
+			AgentReaction s = agentReactions.get(cmd); //get the commanhd processor for he command
 			if (s!=null) {
 				s.execute(msg);  //use it
 			}
@@ -249,24 +250,8 @@ public abstract class DevdasCore
 			break;		
 		}
 	}
-
-	private void processAgentCommand(AgentMessage msg) 
-	{
-		switch(msg.getType()){
-		case "Command":
-			handleAgentCommand(msg);
-			break;
-		case "Broadcast":
-			handleAgentBroadcast(msg);
-			break;
-		case "Response":
-			handleAgentResponse(msg);
-			break;
-		default:
-			logger.sendLogMessage("Cmd Msg Error", "Unknown message type: " + msg.getType(), "System");
-			break;		
-		}
-	}
+	
+	
 /**
  * This handles messages that are responses to previous commands sent out by the agent. However,
  * an agent won't be sending commands that demand a reply to other agents or to the system until
@@ -282,12 +267,6 @@ public abstract class DevdasCore
 		logger.sendLogMessage("Messaging Error", "Recieved unexpected response message", "System");
 	}
 
-	private void handleAgentResponse(AgentMessage msg) {
-		// this is in response to a system command sent out previously
-		// agents shouldn't be doing system command kind of stuff so log it and do nothing
-		
-		logger.sendLogMessage("Messaging Error", "Recieved unexpected response message", "Agent");
-	}
 	/**
 	 * This handles the case where something has sent out a broadcast for consumption by the agetns. This might
 	 * be a command to be executed by all agents, such as a status command. For now it will be assumed that it is
@@ -305,18 +284,7 @@ public abstract class DevdasCore
 		
 		// some other kind of broadcast?? maybe??
 	}
-	
-	private void handleAgentBroadcast(AgentMessage msg) {
-		// check to see if it is actually command that's been broadcast to all agents
-		String cmd = msg.getParam("command");
-		if (cmd != null && !cmd.isEmpty()) {
-			handleAgentCommand(msg);
-			return;
-			}
 		
-		// some other kind of broadcast?? maybe??
-	}
-	
 	/**
 	 * This invokes the command processor requested within the command message
 	 * @param msg
@@ -338,7 +306,7 @@ public abstract class DevdasCore
 		String cmd = msg.getDestination();
 		// Check to see if there's a command provided in the message
 		if (cmd != null && !cmd.isEmpty()) {
-			AgentProcessor s = agentCommands.get(cmd); //get the commanhd processor for he command
+			AgentReaction s = agentReactions.get(cmd); //get the commanhd processor for he command
 			if (s!=null) {
 				s.execute(msg);  //use it
 			}
@@ -387,7 +355,7 @@ public abstract class DevdasCore
 	 */
 	public String getOperationCommandsList()
 	{
-		return agentCommands.keySet().toString();
+		return agentReactions.keySet().toString();
 	}
 
 	
@@ -396,9 +364,9 @@ public abstract class DevdasCore
 	 * @param processName
 	 * @return
 	 */
-	public AgentProcessor getOperationCommand(String processName)
+	public AgentReaction getOperationCommand(String processName)
 	{
-		return agentCommands.get(processName);
+		return agentReactions.get(processName);
 	}
 
 	
@@ -422,19 +390,17 @@ public abstract class DevdasCore
 		while (true) {
 			while (commandRunning) {
 				while (agentRunning) {
-					agentFunction();
+					agentActivity();
 				}
 				try {
 					Thread.sleep(10);
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
 			try {
 				Thread.sleep(10);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -449,8 +415,7 @@ public abstract class DevdasCore
 	 */
 	public void setLogLevel(CommandMessage command)
 	{
-		//			this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process SetLogLevel command", "Info");	
-		//ToDo error checking on this
+
 		logLevel = command.getParam("logLevel");
 		if (!logLevel.isEmpty() ) {
 			logger.setLevel(logLevel);
@@ -473,8 +438,8 @@ public abstract class DevdasCore
 
 		try {
 			Thread.sleep(5);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
+		} 
+		catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 

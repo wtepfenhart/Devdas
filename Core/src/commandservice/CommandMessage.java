@@ -64,6 +64,7 @@ public class CommandMessage
      * 
      * @parms j JSONObject to be read
      */
+	@SuppressWarnings("unchecked")
 	public void read(JSONObject jo)
     {
 		id = (String) jo.get("messageID");

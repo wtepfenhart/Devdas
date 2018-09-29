@@ -34,7 +34,7 @@ public class AgentServicePublisher extends RoutingPublisher
      */
     public void setMessage(AgentMessage cmd)
     {
-    	super.setMessage(cmd.toJSONString(), cmd.getDestination());
+    	super.setMessage(cmd.toJSONString(), cmd.getRoute());
     }
     
     

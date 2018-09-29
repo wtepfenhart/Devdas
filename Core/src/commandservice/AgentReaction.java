@@ -1,13 +1,13 @@
 /**
  * 
  * Author: wtepfenhart
- * File: AgentProcessor.java
+ * File: AgentReaction.java
  * Date: Sep 25, 2018
  * Copyright (C) 2018
  *
  */
 package commandservice;
 
-public interface AgentProcessor {
+public interface AgentReaction {
 	void execute(AgentMessage command);
 }

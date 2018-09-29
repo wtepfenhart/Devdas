@@ -1,6 +1,5 @@
 package commandservice;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 import devdas.Configuration;
@@ -26,29 +25,27 @@ public class DevdasCoreTester extends DevdasCore
 		tester.run();
 	}
 
-	public void initializeAgentCommands() {
+	public void initializeAgentReactions() {
 		// TODO Auto-generated method stub
-		HashMap<String,AgentProcessor> result = new HashMap<String,AgentProcessor>();
+		HashMap<String,AgentReaction> result = new HashMap<String,AgentReaction>();
 		result.put("Say", new TestService(this));
-		agentCommands = result;
+		agentReactions = result;
 	}
 
-	@Override
-	public ArrayList<String> initializeAgentTopics() {
+	
+	public void initializeAgentInterests() {
 		// TODO Auto-generated method stub
-		ArrayList<String> result = new ArrayList<String>();
-		result.add("All");
-		result.add("Command");
-		return result;
+		agentInterests.add("All");
+		agentInterests.add("Command");
 	}
 
 	public void test(AgentMessage msg) {
 		String s = msg.getParam("Say");
-		System.out.println("s");
+		System.out.println(s);
 	}
 
 	@Override
-	public void agentFunction() {
+	public void agentActivity() {
 		// TODO Auto-generated method stub
 		try {
 			Thread.sleep(10);

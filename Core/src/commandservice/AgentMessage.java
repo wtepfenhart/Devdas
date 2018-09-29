@@ -23,9 +23,9 @@ public class AgentMessage {
 	public static String hostID;
 	
     private String id;
-    private String type;
     private String source;
-    private String destination;    
+    private String destination; 
+    private String topic;
     private Map<String, String> parms = new HashMap<String, String>();
     
     /**
@@ -34,7 +34,6 @@ public class AgentMessage {
     public AgentMessage()
     {
     	id = (UUID.randomUUID()).toString();
-    	type = "";
     	source = hostID;
     	setDestination("");
     	
@@ -52,30 +51,34 @@ public class AgentMessage {
     public AgentMessage(AgentMessage command)
     {
     	id = (UUID.randomUUID()).toString();
-	    type = "Response";
 	    source = hostID;
-	    setDestination(command.source);
+	    destination = command.source;
+	    topic = command.topic;
 		parms.put("ReplyTo", command.id);
     }
     
-    /**
+  
+
+	/**
      * Reads a JSONObject for each expected key-value mapping. If the value is
      * null or an empty string (""), the value of the parameter is set to null.
      * 
      * @parms j JSONObject to be read
      */
+
+	@SuppressWarnings("unchecked")
 	public void read(JSONObject jo)
     {
 		id = (String) jo.get("messageID");
-		type = (String) jo.get("type");
 		source = (String) jo.get("source");
-		setDestination((String) jo.get("destination"));
+		destination = (String) jo.get("destination");
+		topic = (String) jo.get("topic");
 		parms = (Map<String, String>) jo.get("parms");
     }
     
-	
-    
-    @Override
+
+
+	@Override
     public String toString()
     {
         return this.toJSONString();
@@ -95,17 +98,14 @@ public class AgentMessage {
     {
         JSONObject j = new JSONObject();
         j.put("id", id);
-        j.put("type", type);
         j.put("source", source);
+        j.put("topic", topic);
         j.put("destination", getDestination());
         j.put("parms", parms);
              
         return j.toJSONString();
     }
-    
-    public String getType() {
-    	return type;
-    }
+
     
        
 ////////////////////////////*SETTERS*////////////////////////////
@@ -170,8 +170,20 @@ public class AgentMessage {
 		this.destination = destination;
 	}
 
-	public void setType(String string) {
-		type = string;		
+	public void setTopic(String string) {
+		topic = string;
 	}
-    
+
+    public String getRoute() {
+    	if (destination != "") {
+    		return destination;
+    	} else if (topic != "") {
+    		return topic;
+    	}
+    	return "";
+    }
+
+	public String getTopic(String string) {
+		return topic;
+	}
 }

@@ -8,29 +8,22 @@
  */
 package commandservice;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import devdas.Configuration;
-
 /**
  * @author wtepfenhart
  *
  */
-public class TestService implements AgentProcessor {
+public class TestService implements AgentReaction {
 	DevdasCoreTester app;
 
 	public TestService(DevdasCoreTester anApp) {
 		app = anApp;
-		// TODO Auto-generated constructor stub
 	}
 
 	/* (non-Javadoc)
-	 * @see commandservice.AgentProcessor#execute(commandservice.AgentMessage)
+	 * @see commandservice.AgentReaction#execute(commandservice.AgentMessage)
 	 */
 	@Override
 	public void execute(AgentMessage command) {
-		// TODO Auto-generated method stub
 		app.test(command);
 		return;
 	}
