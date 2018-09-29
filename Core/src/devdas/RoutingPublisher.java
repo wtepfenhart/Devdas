@@ -144,7 +144,7 @@ public class RoutingPublisher extends Thread{
 
 			channel.exchangeDeclare(exchange, "direct");
 			channel.basicPublish(exchange, msg.getRoute(), null, msg.getMessage().getBytes("UTF-8"));
-			System.out.println(" [x] Sent " + msg.getRoute() + " Message: " + msg.getMessage());
+//			System.out.println(" [x] Sent " + msg.getRoute() + " Message: " + msg.getMessage());
 
 			channel.close();
 			connection.close();
@@ -161,22 +161,21 @@ public class RoutingPublisher extends Thread{
 	 */
 	public static void main(String[] args) {
 		JSONObject a = new JSONObject();
-		a.put("Hello", "Testing");
+		a.put("Command", "Test");
 		RoutingPublisher mySender;
 		Configuration config = new Configuration(args);
 		mySender = new RoutingPublisher(config, "Agent");
 		mySender.start();
 		mySender.setMessage("All",a.toString());
-		a.remove("Hello");
-		a.put("Goodbye", "Testing more");
-		mySender.setMessage("All", a.toString());
+		a.put("Say", "Testing more");
+		mySender.setMessage("Command", a.toString());
 		Scanner scanner = new Scanner(System.in);
 		String msg = scanner.nextLine();
-		a.put("Next", msg);
-		mySender.setMessage("All",a.toString());
+		a.put("Say", msg);
+		mySender.setMessage("Command",a.toString());
 		msg = scanner.nextLine();
-		a.put("Next", msg);
-		mySender.setMessage("All",a.toString());
+		a.put("Say", msg);
+		mySender.setMessage("Command",a.toString());
 		try {
 			sleep(10);
 		} catch (InterruptedException e) {

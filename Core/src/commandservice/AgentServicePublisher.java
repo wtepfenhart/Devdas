@@ -73,9 +73,7 @@ public class AgentServicePublisher extends RoutingPublisher
 		AgentMessage command = new AgentMessage();
 			command.addParam("Agent", scanner.nextLine());
 			cmdSender.setMessage(command);
-			
-			command.addParam("Agent", scanner.nextLine());
-			cmdSender.setMessage(command);
+
         
         //Terminate
         try {

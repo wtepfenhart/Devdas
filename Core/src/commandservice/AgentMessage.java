@@ -169,5 +169,9 @@ public class AgentMessage {
 	public void setDestination(String destination) {
 		this.destination = destination;
 	}
+
+	public void setType(String string) {
+		type = string;		
+	}
     
 }

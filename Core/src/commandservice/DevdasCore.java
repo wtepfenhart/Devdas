@@ -42,11 +42,19 @@ public abstract class DevdasCore
 	private ArrayList<String> agentRoutes;
 
 	private Map<String, CommandProcessor> systemCommands;
-	private Map<String, AgentProcessor> agentCommands; 
+	protected Map<String, AgentProcessor> agentCommands; 
 
 //	private boolean running; 
 	private String logLevel;
 
+	
+	
+	public abstract void initializeAgentCommands();
+
+	public abstract ArrayList<String> initializeAgentTopics();
+
+	public abstract void agentFunction();
+	
 	/**
 	 * Creates a new Generic Program set by the Configuration object, and allows the ability to set the Publisher and Subscriber to specific exchanges 
 	 * 
@@ -71,7 +79,6 @@ public abstract class DevdasCore
 		logger.sendLogMessage("Start up", hostID + " started", "System");
 
 		//set up system command functionality
-		
 		systemCommands = new HashMap<String, CommandProcessor>();
 		systemRoutes = new ArrayList<String>();
 		systemRoutes.add(hostID);
@@ -81,17 +88,16 @@ public abstract class DevdasCore
 		commandPublisher.start();
 		recieveCommandMessages(configuration.getSystemExchange(),systemRoutes);
 		
-		
+		// setup agent command functionality
 		agentRoutes = initializeAgentTopics();
 		agentRoutes.add(hostID);
-		agentPublisher = new AgentServicePublisher(configuration,configuration.getSystemExchange());
+		initializeAgentCommands();
+		agentPublisher = new AgentServicePublisher(configuration,configuration.getAgentExchange());
 		agentPublisher.start();
 		recieveAgentMessages(configuration.getAgentExchange(),agentRoutes);
 		commandRunning = true;
 		agentRunning = true;
 	}
-	
-	public abstract ArrayList<String> initializeAgentTopics();
 
 	/**
 	 * This initializes all of the commands.
@@ -144,7 +150,7 @@ public abstract class DevdasCore
 					try {
 						json = (JSONObject) parser.parse(message);
 						CommandMessage msg = new CommandMessage(json);
-						processCommand(msg);
+						processSystemCommand(msg);
 					} catch (ParseException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -189,15 +195,13 @@ public abstract class DevdasCore
 				public void handleDelivery(String consumerTag, Envelope envelope,
 						AMQP.BasicProperties properties, byte[] body) throws IOException {
 					String message = new String(body, "UTF-8");
-					System.out.println(message);
 					JSONParser parser = new JSONParser();
 					JSONObject json;
 					try {
 						json = (JSONObject) parser.parse(message);
 						AgentMessage msg = new AgentMessage(json);
-						processAgentMessage(msg);
+						processAgentCommand(msg);
 					} catch (ParseException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}
@@ -212,7 +216,15 @@ public abstract class DevdasCore
 
 
 
-	public abstract void processAgentMessage(AgentMessage msg);
+	public void processAgentMessage(AgentMessage msg) {
+		String cmd = msg.getParam("Command");
+		if (cmd != null && !cmd.isEmpty()) {
+			AgentProcessor s = agentCommands.get(cmd); //get the commanhd processor for he command
+			if (s!=null) {
+				s.execute(msg);  //use it
+			}
+		}
+	}
 
 	/**
 	 * Determines the type of command message that was recieved and forwards it to the appropriate
@@ -220,17 +232,17 @@ public abstract class DevdasCore
 	 * 
 	 * @param msg the CommandService message that contains the command
 	 */
-	private void processCommand(CommandMessage msg) 
+	private void processSystemCommand(CommandMessage msg) 
 	{
 		switch(msg.getType()){
 		case "Command":
-			handleCommand(msg);
+			handleSystemCommand(msg);
 			break;
 		case "Broadcast":
-			handleBroadcast(msg);
+			handleSystemBroadcast(msg);
 			break;
 		case "Response":
-			handleResponse(msg);
+			handleSystemResponse(msg);
 			break;
 		default:
 			logger.sendLogMessage("Cmd Msg Error", "Unknown message type: " + msg.getType(), "System");
@@ -238,7 +250,23 @@ public abstract class DevdasCore
 		}
 	}
 
-
+	private void processAgentCommand(AgentMessage msg) 
+	{
+		switch(msg.getType()){
+		case "Command":
+			handleAgentCommand(msg);
+			break;
+		case "Broadcast":
+			handleAgentBroadcast(msg);
+			break;
+		case "Response":
+			handleAgentResponse(msg);
+			break;
+		default:
+			logger.sendLogMessage("Cmd Msg Error", "Unknown message type: " + msg.getType(), "System");
+			break;		
+		}
+	}
 /**
  * This handles messages that are responses to previous commands sent out by the agent. However,
  * an agent won't be sending commands that demand a reply to other agents or to the system until
@@ -247,13 +275,19 @@ public abstract class DevdasCore
  * 
  * @param msg
  */
-	private void handleResponse(CommandMessage msg) {
+	private void handleSystemResponse(CommandMessage msg) {
 		// this is in response to a system command sent out previously
 		// agents shouldn't be doing system command kind of stuff so log it and do nothing
 		
 		logger.sendLogMessage("Messaging Error", "Recieved unexpected response message", "System");
 	}
 
+	private void handleAgentResponse(AgentMessage msg) {
+		// this is in response to a system command sent out previously
+		// agents shouldn't be doing system command kind of stuff so log it and do nothing
+		
+		logger.sendLogMessage("Messaging Error", "Recieved unexpected response message", "Agent");
+	}
 	/**
 	 * This handles the case where something has sent out a broadcast for consumption by the agetns. This might
 	 * be a command to be executed by all agents, such as a status command. For now it will be assumed that it is
@@ -261,22 +295,33 @@ public abstract class DevdasCore
 	 * 
 	 * @param msg
 	 */
-	private void handleBroadcast(CommandMessage msg) {
+	private void handleSystemBroadcast(CommandMessage msg) {
 		// check to see if it is actually command that's been broadcast to all agents
 		String cmd = msg.getParam("command");
 		if (cmd != null && !cmd.isEmpty()) {
-			handleCommand(msg);
+			handleSystemCommand(msg);
 			return;
 			}
 		
 		// some other kind of broadcast?? maybe??
 	}
-
+	
+	private void handleAgentBroadcast(AgentMessage msg) {
+		// check to see if it is actually command that's been broadcast to all agents
+		String cmd = msg.getParam("command");
+		if (cmd != null && !cmd.isEmpty()) {
+			handleAgentCommand(msg);
+			return;
+			}
+		
+		// some other kind of broadcast?? maybe??
+	}
+	
 	/**
 	 * This invokes the command processor requested within the command message
 	 * @param msg
 	 */
-	private void handleCommand(CommandMessage msg) {
+	private void handleSystemCommand(CommandMessage msg) {
 		String cmd = msg.getParam("command");
 		
 		// Check to see if there's a command provided in the message
@@ -288,7 +333,17 @@ public abstract class DevdasCore
 		}
 	}
 
-
+	private void handleAgentCommand(AgentMessage msg) {
+		//String cmd = msg.getParam("command");
+		String cmd = msg.getDestination();
+		// Check to see if there's a command provided in the message
+		if (cmd != null && !cmd.isEmpty()) {
+			AgentProcessor s = agentCommands.get(cmd); //get the commanhd processor for he command
+			if (s!=null) {
+				s.execute(msg);  //use it
+			}
+		}
+	}
 	/**
 	 * @param running The setter to indicate that the program thread should be running
 	 */
@@ -353,9 +408,14 @@ public abstract class DevdasCore
 	 * 
 	 * @param cmd The CommandMessage to send
 	 */
-	public void sendMessage(CommandMessage cmd)
+	public void sendSystemMessage(CommandMessage cmd)
 	{
 		commandPublisher.setMessage(cmd);
+	}
+	
+	public void sendAgentMessage(String rt, AgentMessage cmd)
+	{
+		agentPublisher.setMessage(rt, cmd.toString());
 	}
 
 	public void run() {
@@ -380,7 +440,6 @@ public abstract class DevdasCore
 		}
 	}
 	
-	public abstract void agentFunction();
 
 	////////////////////////////*METHODS USED BY COMMAND PROCESSORS*////////////////////////////
 	/**

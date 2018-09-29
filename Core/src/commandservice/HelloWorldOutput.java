@@ -1,3 +1,11 @@
+/**
+ *
+ * @file HelloWorldOutput.java
+ * @author wtepfenhart
+ * @date: Sep 29, 2018
+ * Copyright wtepfenhart (c) 2018
+ *
+ */
 package commandservice;
 
 import java.util.ArrayList;
@@ -5,10 +13,10 @@ import java.util.HashMap;
 
 import devdas.Configuration;
 
-public class DevdasCoreTester extends DevdasCore
+public class HelloWorldOutput extends DevdasCore
 {
 	
-	public DevdasCoreTester(Configuration config) {
+	public HelloWorldOutput(Configuration config) {
 		super(config);
 		// TODO Auto-generated constructor stub
 	}
@@ -22,14 +30,25 @@ public class DevdasCoreTester extends DevdasCore
 	public static void main(String[] args)
 	{
 		Configuration config = new Configuration(args);
-		DevdasCoreTester tester = new DevdasCoreTester(config);
+		HelloWorldOutput tester = new HelloWorldOutput(config);
 		tester.run();
+	}
+	
+	public class Say implements AgentProcessor{
+		
+		public void Say() {
+			
+		}
+		
+		public void execute(AgentMessage cmd) {
+			System.out.println(cmd.getParam("Say"));
+		}
 	}
 
 	public void initializeAgentCommands() {
 		// TODO Auto-generated method stub
 		HashMap<String,AgentProcessor> result = new HashMap<String,AgentProcessor>();
-		result.put("Say", new TestService(this));
+		result.put("Say", new Say());
 		agentCommands = result;
 	}
 
@@ -38,13 +57,8 @@ public class DevdasCoreTester extends DevdasCore
 		// TODO Auto-generated method stub
 		ArrayList<String> result = new ArrayList<String>();
 		result.add("All");
-		result.add("Command");
+		result.add("Say");
 		return result;
-	}
-
-	public void test(AgentMessage msg) {
-		String s = msg.getParam("Say");
-		System.out.println("s");
 	}
 
 	@Override
