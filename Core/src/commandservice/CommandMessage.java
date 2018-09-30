@@ -19,7 +19,6 @@ import org.json.simple.JSONObject;
  */
 public class CommandMessage
 {
-        //Class-level variable
 	public static String hostID;
 	
     private String id;
@@ -71,7 +70,7 @@ public class CommandMessage
 		type = (String) jo.get("type");
 		source = (String) jo.get("source");
 		setDestination((String) jo.get("destination"));
-		parms = (Map<String, String>) jo.get("parms");
+		parms = (jo.get("parms") == null) ? parms : (Map<String, String>) jo.get("parms");
     }
     
 	
@@ -104,35 +103,16 @@ public class CommandMessage
         return j.toJSONString();
     }
     
-    public String getType() {
-    	return type;
-    }
-    
-    public boolean isResponse()
-    {
-        return type.equals("Response");
-    }
-    
-    public boolean isCommand()
-    {
-        return type.equals("Command");
-    }
-    
-    public boolean isBroadcast()
-    {
-    	return type.equals("Broadcast");
-    }
-    
-    public boolean isNone()
-    {
-    	return !(isResponse() && isCommand() && isBroadcast());
-    }
-    
 ////////////////////////////*SETTERS*////////////////////////////
     public void addParam(String key, String value)
     {		
     	parms.put(key, (value == null) ? "" : value);    	
     }
+
+	public void setDestination(String destination)
+	{
+		this.destination = destination;
+	}
     
 ////////////////////////////*GETTERS*////////////////////////////
     public String getParam(String key)
@@ -140,53 +120,51 @@ public class CommandMessage
     	return this.parms.get(key);
     }
     
+    public String getDestination()
+	{
+		return destination;
+	}
+    
+    public String getType()
+    {
+    	return type;
+    }
+    
     /**
      * @parms args Command line arguments
      * Used for debugging and testing the class code
      */
     public static void main(String[] args)
-    {
-/*        JSONObject o = new JSONObject();
-        o.put("Source", "Agent 1");
-        o.put("Destination", "Agent 2");
-        System.out.println(o);
+    {   
+    	JSONObject o = new JSONObject();
+        o.put("type", "Test");
+        	System.out.println(o);
         
         CommandMessage commander1 = new CommandMessage();
-        commander1.read(o.toJSONString());
-        
-        o.put("Command", "Start");
-        o.put("Response", "");
-        o.put("Explanation", "Why?");
-        System.out.println(o);
-        CommandMessage commander2 = new CommandMessage();
-        commander2.read(o);
-        
-        System.out.println("Com1: " + commander1);
-        System.out.println("Com2: " + commander2);
-        
+        	System.out.println(" [.] Before read: " + commander1);
+        	
         commander1.addParam("Command", "Start");
+        commander1.addParam("Response", "");
+        commander1.addParam("Explanation", "Why?");
+            System.out.println(" [.] After added params: " + commander1);
+            
+        commander1.addParam("Command", "Stop");
+        	System.out.println(" [.] After command change: " + commander1);
+       
+        commander1.read(o);
+        	System.out.println(" [.] After read: " + commander1);
+        	
+        CommandMessage commander2 = new CommandMessage(commander1);
+        	System.out.println(" [.] New commander: " + commander2);
+        commander2 = new CommandMessage(o);
         
-        System.out.println("After ---> \tCom1: " + commander1);
-        
-        if(commander1.isCommand())
+        if(commander1.getType().equals("Test"))
         {
-            System.out.println(commander1.getParam("Command"));
-        }
-        else if (commander1.isResponse())
-        {
-            System.out.println(commander1.getParam("Response"));
+            System.out.println(" [.] Explanation: " + commander1.getParam("Explanation"));
         }
         else
         {
-            System.out.println("No command nor response in cmd " + commander1.getParam("CommandID"));
-        } */
+        	System.err.println("ERROR");
+        }
     }
-
-	public String getDestination() {
-		return destination;
-	}
-
-	public void setDestination(String destination) {
-		this.destination = destination;
-	}
 }
