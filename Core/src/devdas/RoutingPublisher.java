@@ -3,6 +3,8 @@ import java.util.Scanner;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
+import org.json.simple.JSONObject;
+
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -81,7 +83,7 @@ public class RoutingPublisher extends Thread{
 	 *
 	 */
 	public void run(){  
-		System.out.println("thread is running..."); 
+//		System.out.println("thread is running..."); 
 		running = true;
 		while (running) {
 			try {
@@ -92,13 +94,12 @@ public class RoutingPublisher extends Thread{
 					sleep(10);
 				}
 			} catch (InterruptedException e) {
-				System.out.println("Died in sleep!");
-				// TODO Auto-generated catch block
+//				System.out.println("Died in sleep!");
 				currentThread().interrupt();
 				e.printStackTrace();
 			}
 		}
-		System.out.println("Exiting ExchangePublisher Thread");
+//		System.out.println("Exiting ExchangePublisher Thread");
 	}
 	
 
@@ -142,7 +143,7 @@ public class RoutingPublisher extends Thread{
 
 			channel.exchangeDeclare(exchange, "direct");
 			channel.basicPublish(exchange, msg.getRoute(), null, msg.getMessage().getBytes("UTF-8"));
-			System.out.println(" [x] Sent " + msg.getRoute() + " Message: " + msg.getMessage());
+//			System.out.println(" [x] Sent " + msg.getRoute() + " Message: " + msg.getMessage());
 
 			channel.close();
 			connection.close();
@@ -157,18 +158,24 @@ public class RoutingPublisher extends Thread{
 	/**
 	 * @param args
 	 */
+	@SuppressWarnings("unchecked")
 	public static void main(String[] args) {
+		JSONObject a = new JSONObject();
+		a.put("Command", "Test");
 		RoutingPublisher mySender;
 		Configuration config = new Configuration(args);
-		mySender = new RoutingPublisher(config, "Intention");
+		mySender = new RoutingPublisher(config, "Agent");
 		mySender.start();
-		mySender.setMessage("Speak","Hello This is going to fail!");
-		mySender.setMessage("Speak", "Second message to send");
+		mySender.setMessage("All",a.toString());
+		a.put("Say", "Testing more");
+		mySender.setMessage("Command", a.toString());
 		Scanner scanner = new Scanner(System.in);
 		String msg = scanner.nextLine();
-		mySender.setMessage("Log",msg);
+		a.put("Say", msg);
+		mySender.setMessage("Command",a.toString());
 		msg = scanner.nextLine();
-		mySender.setMessage("Speak",msg);
+		a.put("Say", msg);
+		mySender.setMessage("Command",a.toString());
 		try {
 			sleep(10);
 		} catch (InterruptedException e) {

@@ -6,15 +6,17 @@ package commandservice;
  * 
  * @author B-T-Johnson
  */
-public class PerformStopCommandProcessor extends SystemCommandProcessor
+public class StopCommand implements CommandProcessor
 {
-	public PerformStopCommandProcessor(DevdasCore program)
+	private DevdasCore app;
+
+	public StopCommand(DevdasCore program)
 	{
-		super(program);
+		app = program;
 	}
 	
-	public void process(CommandServiceMessage command) throws Exception
+	public void execute(CommandMessage command)
 	{
-		getProgram().stop(command);
+		app.stop(command);
 	}
 }
