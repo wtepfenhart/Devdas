@@ -7,7 +7,7 @@
 //import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-
+import java.util.Scanner;
 import commandservice.DevdasCore;
 import devdas.Configuration;
 public class TextInput extends DevdasCore  {
@@ -17,15 +17,18 @@ public class TextInput extends DevdasCore  {
 	static String value;
 	static String input;
 	static String interpreter;
-	private static Configuration config
+	Scanner scanner;
+	private static Configuration config;
 	//constants
-	private final static String QUEUE_NAME = "Request";;
+	private final static String QUEUE_NAME = "Request";
+	
 	/**
 	 * Has random variables to make testing easier
 	 */
 	public TextInput() {
 		// TODO Auto-generated constructor stub
 		super(config);
+		scanner = new Scanner(System.in);
 		kind = "kind";
 		value = "value";
 		input = "input";
@@ -96,7 +99,11 @@ public class TextInput extends DevdasCore  {
 	{
 		
 	}
+	
 	@Override
+	
+	 
+	 
 	public void initializeAgentReactions() {
 		// TODO Auto-generated method stub
 		
@@ -112,6 +119,18 @@ public class TextInput extends DevdasCore  {
 		// TODO Auto-generated method stub
 		
 		TextInput t = new TextInput();
+		System.out.println("Enter the kind:");
+		String k = t.scanner.next();
+		t.setKind(k);
+		System.out.println("Enter the value:");
+		String v = t.scanner.next();
+		t.setValue(v);
+		System.out.println("Enter the input:");
+		String i = t.scanner.next();
+		t.setInput(i);
+		System.out.println("Enter interpreter:");
+		String it = t.scanner.next();
+		t.setInterpreter(it);
 		try {
 			System.out.println(t.getClass().getSimpleName() + " " + InetAddress.getLocalHost().getHostName());
 		} catch (UnknownHostException e) {
