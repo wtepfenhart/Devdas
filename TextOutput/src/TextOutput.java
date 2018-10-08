@@ -1,3 +1,6 @@
+import commandservice.DevdasCore;
+import devdas.Configuration;
+
 /**
  * 
  * Author: wtepfenhart
@@ -11,21 +14,44 @@
  * @author wtepfenhart
  *
  */
-public class TextOutput {
+
+public class TextOutput extends DevdasCore{
 
 	/**
 	 * 
 	 */
-	public TextOutput() {
+	private static Configuration config;
+	public TextOutput()  {
 		// TODO Auto-generated constructor stub
+		super(config);
 	}
 
 	/**
 	 * @param args
 	 */
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
 
+
+	@Override
+	public void initializeAgentReactions() {
+		// TODO Auto-generated method stub
+		
 	}
 
+	@Override
+	public void initializeAgentInterests() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void agentActivity() {
+		// TODO Auto-generated method stub
+		
+		
+	}
+	public static void main(String [] args)
+	{
+		TextOutput tester = new TextOutput();
+		
+	}
 }
