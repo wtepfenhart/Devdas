@@ -33,6 +33,7 @@ public abstract class DevdasCore
 
 	private boolean agentRunning = false;
 	private boolean commandRunning = false;
+	private boolean errorState = false; //When will this condition be required? Upon a failed execution? How do we know when an execution has failed? When there's an exception thrown, or when we consider its response invalid?
 
 	private LogPublisher logger; 
 	private CommandServicePublisher commandPublisher; 
@@ -46,20 +47,18 @@ public abstract class DevdasCore
 
 	private String logLevel;
 
-	
-	
+	/**
+	 * This allocates a HashMap for the agent commands and initializes the topics which this agent will register. In the background,
+	 * additional topics will be registered such as the UUID of the executing agent.
+	 */
 	public abstract void initializeAgentReactions();
-
-	public abstract void initializeAgentInterests();
 
 	public abstract void agentActivity();
 	
 	/**
-	 * Creates a new Generic Program set by the Configuration object, and allows the ability to set the Publisher and Subscriber to specific exchanges 
+	 * Creates a new Generic Program set by the Configuration object to define its Publisher and Subscriber
 	 * 
 	 * @param config Configuration object to set
-	 * @param pubExchange Exchange for the Publisher
-	 * @param subExchange Exchange for the Subscriber
 	 */
 	public DevdasCore(Configuration config)
 	{
@@ -91,10 +90,11 @@ public abstract class DevdasCore
 		agentReactions = new HashMap<String, AgentReaction>();
 		agentInterests = new ArrayList<String>();
 		
-		initializeAgentInterests();
+		initializeAgentReactions();
 		agentInterests.add("All");
 		agentInterests.add(hostID);
-		initializeAgentReactions();
+		
+		//Set up publisher/subscriber and start
 		agentPublisher = new AgentServicePublisher(configuration,configuration.getAgentExchange());
 		agentPublisher.start();
 		recieveAgentMessages(configuration.getAgentExchange(),agentInterests);
@@ -119,25 +119,28 @@ public abstract class DevdasCore
 
 
 	/**
-	 * This initializes the ability of the program to recieve system commands. Handling the command
+	 * This initializes the ability of the program to receive system commands. Handling the command
 	 * is accomplished by calling the processCommand method.
 	 * 
 	 * @param exch -the exchange for publish/subscribe 
-	 * @param systemRoutes - all of the various keywords for messages that it will recieve
+	 * @param systemRoutes - all of the various keywords for messages that it will receive
 	 */
-	public void recieveCommandMessages(String exch,ArrayList<String> routes) {
+	public void recieveCommandMessages(String exch,ArrayList<String> routes)
+	{
 		ConnectionFactory factory = new ConnectionFactory();
 		factory.setHost(configuration.getIpAddress());
 		factory.setUsername(configuration.getUserName());
 		factory.setPassword(configuration.getUserPassword());
 		factory.setVirtualHost(configuration.getVirtualHost());
-		try {
+		try
+		{
 			Connection connection = factory.newConnection();
 			Channel channel = connection.createChannel();
 
 			channel.exchangeDeclare(exch, "direct");
 			String queueName = channel.queueDeclare().getQueue();
-			for (String rt : routes) {
+			for (String rt : routes)
+			{
 				channel.queueBind(queueName, exch, rt);
 			}
 
@@ -146,22 +149,27 @@ public abstract class DevdasCore
 			Consumer consumer = new DefaultConsumer(channel) {
 				@Override
 				public void handleDelivery(String consumerTag, Envelope envelope,
-						AMQP.BasicProperties properties, byte[] body) throws IOException {
+						AMQP.BasicProperties properties, byte[] body) throws IOException
+				{
 					String message = new String(body, "UTF-8");
 					JSONParser parser = new JSONParser();
 					JSONObject json;
-					try {
+					try
+					{
 						json = (JSONObject) parser.parse(message);
 						CommandMessage msg = new CommandMessage(json);
 						processSystemCommand(msg);
-					} catch (ParseException e) {
+					}
+					catch (ParseException e)
+					{
 						e.printStackTrace();
 					}
 				}
 			};
 			channel.basicConsume(queueName, true, consumer);
 		}
-		catch (Exception e) {
+		catch (Exception e)
+		{
 			e.printStackTrace(System.out);
 		}
 	}
@@ -185,7 +193,8 @@ public abstract class DevdasCore
 
 			channel.exchangeDeclare(exch, "direct");
 			String queueName = channel.queueDeclare().getQueue();
-			for (String rt : routes) {
+			for (String rt : routes)
+			{
 				channel.queueBind(queueName, exch, rt);
 			}
 
@@ -194,48 +203,55 @@ public abstract class DevdasCore
 			Consumer consumer = new DefaultConsumer(channel) {
 				@Override
 				public void handleDelivery(String consumerTag, Envelope envelope,
-						AMQP.BasicProperties properties, byte[] body) throws IOException {
+						AMQP.BasicProperties properties, byte[] body) throws IOException
+				{
 					String message = new String(body, "UTF-8");
 					JSONParser parser = new JSONParser();
 					JSONObject json;
-					try {
+					try
+					{
 						json = (JSONObject) parser.parse(message);
 						AgentMessage msg = new AgentMessage(json);
 						processAgentMessage(msg);
-					} catch (ParseException e) {
+					}
+					catch (ParseException e)
+					{
 						e.printStackTrace();
 					}
 				}
 			};
 			channel.basicConsume(queueName, true, consumer);
 		}
-		catch (Exception e) {
+		catch (Exception e)
+		{
 			System.out.println(e);
 			e.printStackTrace(System.out);
 		}
 	}
 
-
-
-	public void processAgentMessage(AgentMessage msg) {
+	public void processAgentMessage(AgentMessage msg)
+	{
 		String cmd = msg.getTopic("Topic");
-		if (cmd != null && !cmd.isEmpty()) {
-			AgentReaction s = agentReactions.get(cmd); //get the commanhd processor for he command
-			if (s!=null) {
+		if (cmd != null && !cmd.isEmpty())
+		{
+			AgentReaction s = agentReactions.get(cmd); //get the command processor for he command
+			if (s!=null)
+			{
 				s.execute(msg);  //use it
 			}
 		}
 	}
 
 	/**
-	 * Determines the type of command message that was recieved and forwards it to the appropriate
-	 * hanlder for that type. 
+	 * Determines the type of command message that was received and forwards it to the appropriate
+	 * handler for that type. 
 	 * 
 	 * @param msg the CommandService message that contains the command
 	 */
 	private void processSystemCommand(CommandMessage msg) 
 	{
-		switch(msg.getType()){
+		switch(msg.getType())
+		{
 		case "Command":
 			handleSystemCommand(msg);
 			break;
@@ -260,7 +276,8 @@ public abstract class DevdasCore
  * 
  * @param msg
  */
-	private void handleSystemResponse(CommandMessage msg) {
+	private void handleSystemResponse(CommandMessage msg)
+	{
 		// this is in response to a system command sent out previously
 		// agents shouldn't be doing system command kind of stuff so log it and do nothing
 		
@@ -277,10 +294,12 @@ public abstract class DevdasCore
 	private void handleSystemBroadcast(CommandMessage msg) {
 		// check to see if it is actually command that's been broadcast to all agents
 		String cmd = msg.getParam("command");
-		if (cmd != null && !cmd.isEmpty()) {
+		
+		if (cmd != null && !cmd.isEmpty())
+		{
 			handleSystemCommand(msg);
 			return;
-			}
+		}
 		
 		// some other kind of broadcast?? maybe??
 	}
@@ -293,25 +312,16 @@ public abstract class DevdasCore
 		String cmd = msg.getParam("command");
 		
 		// Check to see if there's a command provided in the message
-		if (cmd != null && !cmd.isEmpty()) {
-			CommandProcessor s = systemCommands.get(cmd); //get the commanhd processor for he command
-			if (s!=null) {
+		if (cmd != null && !cmd.isEmpty())
+		{
+			CommandProcessor s = systemCommands.get(cmd); //get the command processor for the command
+			if (s!=null)
+			{
 				s.execute(msg);  //use it
 			}
 		}
 	}
 
-	private void handleAgentCommand(AgentMessage msg) {
-		//String cmd = msg.getParam("command");
-		String cmd = msg.getDestination();
-		// Check to see if there's a command provided in the message
-		if (cmd != null && !cmd.isEmpty()) {
-			AgentReaction s = agentReactions.get(cmd); //get the commanhd processor for he command
-			if (s!=null) {
-				s.execute(msg);  //use it
-			}
-		}
-	}
 	/**
 	 * @param running The setter to indicate that the program thread should be running
 	 */
@@ -351,26 +361,25 @@ public abstract class DevdasCore
 	}
 
 	/**
-	 * @return Returns a list of the current commands within the known operation commands
+	 * @return Returns a list of the current topics that is known by its agent(s)
 	 */
-	public String getOperationCommandsList()
+	public String getAgentInterestsList()
 	{
-		return agentReactions.keySet().toString();
+		return agentInterests.toArray().toString();
 	}
 
 	
 	/**
-	 * this returns soemthing, but not sure what it is.
-	 * @param processName
-	 * @return
+	 * Returns a call to the AgentReactions assigned to the given topic
+	 * 
+	 * @param topic The String that refers to a subset of AgentReactions
+	 * @return The AgentReactions assigned to the topic
 	 */
-	public AgentReaction getOperationCommand(String processName)
+	public AgentReaction getAgentReaction(String topic)
 	{
-		return agentReactions.get(processName);
+		return agentReactions.get(topic);
 	}
 
-	
-	
 	/**
 	 * Sends a command through the publisher associated with this program as a CommandMessage
 	 * 
@@ -386,21 +395,32 @@ public abstract class DevdasCore
 		agentPublisher.setMessage(rt, cmd.toString());
 	}
 
-	public void run() {
-		while (true) {
-			while (commandRunning) {
-				while (agentRunning) {
+	public void run() 
+	{
+		while (true)
+		{
+			while (commandRunning)
+			{
+				while (agentRunning)
+				{
 					agentActivity();
 				}
-				try {
+				
+				try 
+				{
 					Thread.sleep(10);
-				} catch (InterruptedException e) {
+				} catch (InterruptedException e)
+				{
 					e.printStackTrace();
 				}
 			}
-			try {
+			
+			try 
+			{
 				Thread.sleep(10);
-			} catch (InterruptedException e) {
+			}
+			catch (InterruptedException e)
+			{
 				e.printStackTrace();
 			}
 		}
@@ -409,15 +429,14 @@ public abstract class DevdasCore
 
 	////////////////////////////*METHODS USED BY COMMAND PROCESSORS*////////////////////////////
 	/**
-	 * Handles sending a log message to the log exchange associated with the program; used by processors)
-	 * 
-	 * Will throw an exception if the log level cannot be set
+	 * Handles setting a log level for the logger that is implemented in this class
 	 */
 	public void setLogLevel(CommandMessage command)
 	{
-
 		logLevel = command.getParam("logLevel");
-		if (!logLevel.isEmpty() ) {
+		
+		if (!logLevel.isEmpty() )
+		{
 			logger.setLevel(logLevel);
 		}
 	}
@@ -426,8 +445,6 @@ public abstract class DevdasCore
 	
 	/**
 	 * Handles terminating the whole application with no clean-up; used if in case of critical errors
-	 * 
-	 * Will throw an exception if it cannot exit out of the application
 	 */
 	@SuppressWarnings("unused")
 	public void exit(CommandMessage command) 
@@ -436,22 +453,20 @@ public abstract class DevdasCore
 
 		//		this.logger.sendLogMessage("Success", "Successfully processed Exit Command", "Info");
 
-		try {
+		try
+		{
 			Thread.sleep(5);
 		} 
-		catch (InterruptedException e) {
+		catch (InterruptedException e)
+		{
 			e.printStackTrace();
 		}
 
 		System.exit(1);
 	}
-
-	
 	
 	/**
-	 * Handles terminating an individual program with clean-up
-	 * 
-	 * Will throw an exception if the program cannot stop
+	 * Handles stopping a program from operating
 	 */
 	@SuppressWarnings("unused")
 	public void stop(CommandMessage command)
@@ -460,13 +475,9 @@ public abstract class DevdasCore
 
 		commandRunning = false;
 	}
-
-	
 	
 	/**
 	 * Handles starting a program if it has been stopped
-	 * 
-	 * Will throw an exception if it cannot start the program
 	 */
 	@SuppressWarnings("unused")
 	public void start(CommandMessage command)
@@ -475,20 +486,16 @@ public abstract class DevdasCore
 
 		commandRunning = true;
 	}
-
-	
 	
 	/**
 	 * Handles temporarily halting an individual process
-	 * 
-	 * Will throw an exception if the process cannot be paused
 	 * 
 	 * @param processName Identifier for the process
 	 */
 	@SuppressWarnings("unused")
 	public void pause(CommandMessage command)
 	{
-		agentRunning=false;
+		agentRunning = false;
 		//		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Pause command", "Info");
 	}
 
@@ -502,7 +509,7 @@ public abstract class DevdasCore
 	@SuppressWarnings("unused")
 	public void report(CommandMessage command)
 	{
-		//		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Report command", "Info");
+		//this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Report command", "Info");
 	}
 	
 	
@@ -517,13 +524,13 @@ public abstract class DevdasCore
 	public void resume(CommandMessage command)
 	{
 		agentRunning = true;
-		//		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Resume command", "Info");
+		//this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Resume command", "Info");
 	}
 
 	@SuppressWarnings("unused")
 	public void status(CommandMessage command)
 	{
-		//			this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Status command", "Info");
+		//this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Status command", "Info");
 	}
 
 	////////////////////////////*END OF METHODS USED BY COMMAND PROCESSORS*////////////////////////////

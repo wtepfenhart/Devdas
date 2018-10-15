@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="src" path="Core/src"/>
+	<classpathentry kind="src" path="Logger/src"/>
+	<classpathentry kind="src" path="Manager/src"/>
+	<classpathentry kind="src" path="Monitor/src"/>
+	<classpathentry kind="src" path="TextInput/src"/>
+	<classpathentry kind="src" path="TextInput/tests"/>
+	<classpathentry kind="src" path="TextOutput/src"/>
+	<classpathentry kind="lib" path="Core/lib/amqp-client-4.0.2.jar"/>
+	<classpathentry kind="lib" path="Core/lib/json-simple-1.1.1.jar"/>
+	<classpathentry kind="lib" path="Core/lib/slf4j-api-1.7.21.jar"/>
+	<classpathentry kind="lib" path="Core/lib/slf4j-simple-1.7.22.jar"/>
+	<classpathentry kind="output" path="Core/bin"/>
+</classpath>

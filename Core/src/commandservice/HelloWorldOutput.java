@@ -59,19 +59,15 @@ public class HelloWorldOutput extends DevdasCore
 	/**
 	 * Initializes the agent to look for messages from the "Say" route
 	 */
-	public void initializeAgentReactions() {
-		agentReactions.put("Announcement", new Say());
-	}
-
-	@Override
-	public void initializeAgentInterests() {
+	public void initializeAgentReactions()
+	{
 		agentInterests.add("Announcement");
+		agentReactions.put("Announcement", new Say());
 	}
 
 	/**
 	 * This is a do nothing method that sleeps for 10 milliseconds at a time
 	 */
-	@Override
 	public void agentActivity() {
 		try {
 			Thread.sleep(10);

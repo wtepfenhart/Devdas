@@ -25,18 +25,14 @@ public class DevdasCoreTester extends DevdasCore
 		tester.run();
 	}
 
-	public void initializeAgentReactions() {
-		// TODO Auto-generated method stub
+	public void initializeAgentReactions()
+	{
+		agentInterests.add("All");
+		agentInterests.add("Command");
+		
 		HashMap<String,AgentReaction> result = new HashMap<String,AgentReaction>();
 		result.put("Say", new TestService(this));
 		agentReactions = result;
-	}
-
-	
-	public void initializeAgentInterests() {
-		// TODO Auto-generated method stub
-		agentInterests.add("All");
-		agentInterests.add("Command");
 	}
 
 	public void test(AgentMessage msg) {

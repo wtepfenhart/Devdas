@@ -29,19 +29,12 @@ public class HelloWorldInput extends DevdasCore
 		scanner = new Scanner(System.in);
 	}
 	
-/**
- * This allocates a Hashmap for the agent commands. In this example there aren't any, since
- * all functionality is provided in the agentFunction method.
- */
-	public void initializeAgentReactions() {
-	}
-
 	/**
-	 * This initializes the topics which this agent will register. In the background,
-	 * additional topics will be registered such as the UUID of the executing agent.
+	 * In this example there aren't any agent commands, since
+	 * all functionality is provided in the agentFunction method.
 	 */
-	@Override
-	public void initializeAgentInterests() {
+	public void initializeAgentReactions()
+	{
 	}
 
 	/**
