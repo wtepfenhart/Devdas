@@ -64,6 +64,6 @@ public class TextToIntention extends DevdasCore
 	// TODO replace with junit testing
 	public static void main(String[] args)
 	{
-		
+		 
 	}
 }
