@@ -1,6 +1,5 @@
 package textToIntention;
 
-import java.util.ArrayList;
 import commandservice.AgentMessage;
 import commandservice.AgentReaction;
 import commandservice.DevdasCore;
@@ -10,23 +9,17 @@ import devdas.Configuration;
  * @author B-T-Johnson
  */
 public class TextToIntention extends DevdasCore
-{
-	private ArrayList<String> intent;
+{	
+	private InterestInterpretor interpretor;
 	
 	public TextToIntention(Configuration config)
 	{
 		super(config);
-		
-		intent = new ArrayList<String>();
-	}
-	
-	public void addIntent(String keyword)
-	{
-		intent.add(keyword);
+		this.interpretor = new InterestInterpretor(agentInterests);
 	}
 	
 	public class Interpret implements AgentReaction
-	{
+	{	
 		/**
 		 * Default Constructor
 		 */
@@ -35,18 +28,8 @@ public class TextToIntention extends DevdasCore
 		
 		public void execute(AgentMessage cmd)
 		{
-			System.out.println(isInterested(cmd));
+			System.out.println(interpretor.isInterested(cmd.getParam("ContextFreeText")));
 		}
-	}
-	
-	public boolean isInterested(AgentMessage msg)
-	{	
-		for(String keyword : intent)
-		{
-			return msg.getParam("Intent").contains(keyword);
-		}
-		
-		return false;
 	}
 	
 	public void initializeAgentReactions()
@@ -59,14 +42,7 @@ public class TextToIntention extends DevdasCore
 	{
 		try
 		{
-//			if()
-//			{
-//				
-//			}
-//			else
-			{
-				Thread.sleep(10);
-			}
+			Thread.sleep(10);
 		}
 		catch(InterruptedException e)
 		{
@@ -74,9 +50,20 @@ public class TextToIntention extends DevdasCore
 			e.printStackTrace();
 		}
 	}
+	
+	public String announce()
+	{
+		return interpretor.getInterests().toString();
+	}
 
+	/**
+	 * Used for debugging and testing the class code
+	 * 
+	 * @param args - command line arguments
+	 */
+	// TODO replace with junit testing
 	public static void main(String[] args)
 	{
-
+		
 	}
 }
