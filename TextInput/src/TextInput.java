@@ -1,15 +1,18 @@
 /**
  * @author wtepfenhart
- *Nicholas-Jason Roache
+ *@author Nicholas-Jason Roache
  *
  */
 
 //import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Scanner;
 import commandservice.DevdasCore;
 import devdas.Configuration;
+import commandservice.AgentReaction;
+import commandservice.AgentMessage;
 public class TextInput extends DevdasCore  {
 
 	//Main variables
@@ -91,13 +94,70 @@ public class TextInput extends DevdasCore  {
 	{
 		return interpreter;
 	}
+	
+	//Agent Reactions classes
+	public class Kind implements AgentReaction
+	{
+		//Default constructor
+		public Kind()
+		{
+			
+		}
+		public void execute(AgentMessage message)
+		{
+			//Print some kind of message
+		}
+	}
+	public class Value implements AgentReaction
+	{
+		//Default constructor
+		public Value()
+		{
+			
+		}
+		public void execute(AgentMessage message)
+		{
+			//Print some kind of message
+		}
+	}
+	public class Interpreter implements AgentReaction
+	{
+		//Default constructor
+		public Interpreter()
+		{
+			
+		}
+		public void execute(AgentMessage message)
+		{
+			//Print some kind of message
+		}
+	}
+	public class Input implements AgentReaction
+	{
+		//Default constructor
+		public Input()
+		{
+			
+		}
+		public void execute(AgentMessage message)
+		{
+			//Print some kind of message
+		}
+	}
 	/**
 	 * @param args
 	 */
 	//abstract methods
 	public void agentActivity()
 	{
-		
+		try
+		{
+			Thread.sleep(10);
+		}
+		catch(InterruptedException e)
+		{
+			e.printStackTrace();
+		}
 	}
 	
 	@Override
@@ -106,14 +166,17 @@ public class TextInput extends DevdasCore  {
 	 
 	public void initializeAgentReactions() {
 		// TODO Auto-generated method stub
-		
+		agentInterests.add("Kind");
+		agentReactions.put("Kind",new Kind());
+		agentInterests.add("Value");
+		agentReactions.put("Value", new Value());
+		agentInterests.add("Input");
+		agentReactions.put("Input", new Input());
+		agentInterests.add("Interpreter");
+		agentReactions.put("Interpreter", new Interpreter());
 	}
 
-	@Override
-	public void initializeAgentInterests() {
-		// TODO Auto-generated method stub
-		
-	}
+	
 
 	public static void main(String[] args)  {
 		// TODO Auto-generated method stub
