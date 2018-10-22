@@ -1,5 +1,7 @@
 import commandservice.DevdasCore;
 import devdas.Configuration;
+import commandservice.AgentReaction;
+import commandservice.AgentMessage;
 
 /**
  * 
@@ -12,7 +14,7 @@ import devdas.Configuration;
 
 /**
  * @author wtepfenhart
- *
+ * @author Nicholas-Jason Roache
  */
 
 public class TextOutput extends DevdasCore{
@@ -30,23 +32,41 @@ public class TextOutput extends DevdasCore{
 	 * @param args
 	 */
 
+	public class Response implements AgentReaction
+	{
+		public Response()
+		{
+			
+		}
 
+		@Override
+		public void execute(AgentMessage command) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+	}
+	
 	@Override
 	public void initializeAgentReactions() {
 		// TODO Auto-generated method stub
-		
+		agentInterests.add("Response");
+		agentReactions.put("Response", new Response());
 	}
 
-	@Override
-	public void initializeAgentInterests() {
-		// TODO Auto-generated method stub
-		
-	}
+	
 
 	@Override
 	public void agentActivity() {
 		// TODO Auto-generated method stub
-		
+		try
+		{
+			Thread.sleep(10);
+		}
+		catch(InterruptedException e)
+		{
+			e.printStackTrace();
+		}
 		
 	}
 	public static void main(String [] args)
