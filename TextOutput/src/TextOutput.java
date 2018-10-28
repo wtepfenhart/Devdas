@@ -42,7 +42,7 @@ public class TextOutput extends DevdasCore{
 		@Override
 		public void execute(AgentMessage command) {
 			// TODO Auto-generated method stub
-			
+			System.out.println(command.getParam("Response"));
 		}
 		
 	}
@@ -72,6 +72,6 @@ public class TextOutput extends DevdasCore{
 	public static void main(String [] args)
 	{
 		TextOutput tester = new TextOutput();
-		
+		tester.run();
 	}
 }
