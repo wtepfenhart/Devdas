@@ -57,9 +57,13 @@ public class TextInput extends DevdasCore  {
 			a.setTopic("ContextReliantText");
 			sendAgentMessage(a.getRoute(),a);
 		}
-		a.addParam("Subject",msg);
-		a.setTopic("Statement");
-		sendAgentMessage(a.getRoute(),a);
+		else
+		{
+			a.addParam("Subject",msg);
+			a.setTopic("Statement");
+			sendAgentMessage(a.getRoute(),a);
+		}
+		
 	}
 	
 	@Override
