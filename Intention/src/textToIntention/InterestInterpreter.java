@@ -137,7 +137,8 @@ public class InterestInterpreter implements AgentReaction
 	
 	public void execute(AgentMessage cmd)
 	{
-		System.out.println(this.isInterested(cmd.getParam("ContextFreeText")));
+		if(cmd.getTopic().equals("ContextFreeText"))
+		this.isInterested(cmd.getInterest());
 	}
 	
 	/**
@@ -189,7 +190,7 @@ public class InterestInterpreter implements AgentReaction
 			}
 			else
 			{
-				System.out.println("========================================");
+				System.out.print("========================================");
 				break;
 			}
 		}

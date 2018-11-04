@@ -1,7 +1,9 @@
 package textToIntention;
 
 import java.util.ArrayList;
-
+import java.util.Map;
+import commandservice.AgentMessage;
+import commandservice.AgentReaction;
 import commandservice.DevdasCore;
 import devdas.Configuration;
 
@@ -14,33 +16,49 @@ import devdas.Configuration;
  */
 public class TextToIntention extends DevdasCore
 {
-	@SuppressWarnings("unused")
-	private ArrayList<String> keyToInterests;
+	private ArrayList<InterestInterpreter> keyToInterests;
 	
-	public TextToIntention(Configuration config, String...keyToInterests)
+	public TextToIntention(Configuration config)
 	{
 		super(config);
-		
-		initializeInterpreters(keyToInterests);
+	}
+	
+	/**
+	 * Helps construct all {@link InterestInterpreter}s needed by the agent
+	 */
+	public class Initializer implements AgentReaction
+	{
+		/**
+		 * Default Constructor
+		 */
+		public Initializer()
+		{}
+
+		/**
+		 * Assigns interest(s) to agentReactions
+		 */
+		public void execute(AgentMessage cmd)
+		{	
+			if(cmd.getTopic().equals("Announcement") && cmd.getInterest().equals("Interests") && (cmd.getDestination().isEmpty() || cmd.getDestination() == null))
+			{
+				for(Map.Entry<String, String> map : cmd.getParams()) //TODO Modify .getParams() to return one or more Strings; may have multiple keywords
+				{
+					addKeyToInterests(map.getKey(), new InterestInterpreter(map.getValue()));
+				}
+			}
+		}
 	}
 	
 	public void initializeAgentReactions()
 	{
+		agentInterests.add("Announcement");
 		agentInterests.add("ContextFreeText");
-	}
-	
-	public void initializeInterpreters(String...keyToInterests)
-	{
-		//Not sure how to "un-nest" this; was in initializeAgentReactions(), but would cause a NullPuinterException (since keyToInterests is only instantiated after the method is called)
-		for(String key : keyToInterests)
-		{
-			this.keyToInterests.add(key);
-			agentReactions.put("ContextFreeText", new InterestInterpreter(key));
-		}
+		agentReactions.put("Interests", new Initializer());
 	}
 	
 	public void agentActivity()
 	{
+		//TODO Send context as replyTo
 		try
 		{
 			Thread.sleep(10);
@@ -57,32 +75,32 @@ public class TextToIntention extends DevdasCore
 		System.out.println(agentReactions.values());
 	}
 	
-	public void addKeyToInterests(String...keyToInterests)
+	public void addKeyToInterests(String interestName, InterestInterpreter...keyToInterests)
 	{
-		for(String key : keyToInterests)
+		for(InterestInterpreter key : keyToInterests)
 		{
 			if (!this.keyToInterests.contains(key))
 			{
 				this.keyToInterests.add(key);
-				agentReactions.put("ContextFreeText", new InterestInterpreter(key));
+				agentReactions.put(interestName, key);
 			}
 			else
 			{
-				//Should we log an error?
+				modifyKeyToInterests(interestName, key);
 			}
 		}
 	}
 	
-	public void removeKeyToInterests(String...keyToInterests)
+	public void removeKeyToInterests(InterestInterpreter...keyToInterests)
 	{
-		for(String key : keyToInterests)
+		for(InterestInterpreter key : keyToInterests)
 		{
 			if (!this.keyToInterests.contains(key))
 			{
 				if(this.keyToInterests.size() > 1)
 				{
 					this.keyToInterests.remove(key);
-					agentReactions.remove("ContextFreeText", key);
+					agentReactions.remove("Interests", key);
 				}
 			}
 			else
@@ -92,9 +110,9 @@ public class TextToIntention extends DevdasCore
 		}
 	}
 	
-	public void modifyKeyToInterests(String target, String newKey)
+	public void modifyKeyToInterests(String target, InterestInterpreter newKey)
 	{
-		agentReactions.replace("ContextFreeText", agentReactions.get(target), new InterestInterpreter(newKey));
+		agentReactions.replace("Interests", agentReactions.get(target), newKey);
 	}
 
 	/**
@@ -103,10 +121,10 @@ public class TextToIntention extends DevdasCore
 	 * @param args - command line arguments
 	 */
 	// TODO replace with junit testing
-	public static void main(String[] args) //ERROR; something wrong with build-path (cannot find user.ini)
+	public static void main(String[] args) //TODO ERROR; something wrong with build-path (cannot find user.ini)
 	{
 		Configuration config = new Configuration(args);
-		TextToIntention tester = new TextToIntention(config, "Tester");
+		TextToIntention tester = new TextToIntention(config);
 		tester.run();
 	}
 }
