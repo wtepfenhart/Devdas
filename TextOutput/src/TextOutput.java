@@ -22,8 +22,8 @@ public class TextOutput extends DevdasCore{
 	/**
 	 * 
 	 */
-	private static Configuration config;
-	public TextOutput()  {
+	
+	public TextOutput(Configuration config)  {
 		// TODO Auto-generated constructor stub
 		super(config);
 	}
@@ -32,9 +32,9 @@ public class TextOutput extends DevdasCore{
 	 * @param args
 	 */
 
-	public class Response implements AgentReaction
+	public class Say implements AgentReaction
 	{
-		public Response()
+		public Say()
 		{
 			
 		}
@@ -42,7 +42,7 @@ public class TextOutput extends DevdasCore{
 		@Override
 		public void execute(AgentMessage command) {
 			// TODO Auto-generated method stub
-			System.out.println(command.getParam("Response"));
+			System.out.println(command.getParam("Subject"));
 		}
 		
 	}
@@ -50,8 +50,10 @@ public class TextOutput extends DevdasCore{
 	@Override
 	public void initializeAgentReactions() {
 		// TODO Auto-generated method stub
-		agentInterests.add("Response");
-		agentReactions.put("Response", new Response());
+		agentInterests.add("Announcement");
+		agentReactions.put("Announcement", new Say());
+		agentInterests.add("Question");
+		agentReactions.put("Question", new Say());
 	}
 
 	
@@ -71,7 +73,8 @@ public class TextOutput extends DevdasCore{
 	}
 	public static void main(String [] args)
 	{
-		TextOutput tester = new TextOutput();
+		Configuration c = new Configuration(args);
+		TextOutput tester = new TextOutput(c);
 		tester.run();
 	}
 }
