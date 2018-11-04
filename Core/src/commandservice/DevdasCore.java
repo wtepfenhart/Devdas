@@ -231,7 +231,7 @@ public abstract class DevdasCore
 
 	public void processAgentMessage(AgentMessage msg)
 	{
-		String cmd = msg.getTopic("Topic");
+		String cmd = msg.getTopic();
 		if (cmd != null && !cmd.isEmpty())
 		{
 			AgentReaction s = agentReactions.get(cmd); //get the command processor for he command

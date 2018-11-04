@@ -10,6 +10,8 @@ package commandservice;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.UUID;
 
 import org.json.simple.JSONObject;
@@ -26,6 +28,7 @@ public class AgentMessage {
     private String source;
     private String destination; 
     private String topic;
+    private String interest;
     private Map<String, String> parms = new HashMap<String, String>();
     
     /**
@@ -54,6 +57,7 @@ public class AgentMessage {
 	    source = hostID;
 	    destination = command.source;
 	    topic = command.topic;
+	    interest = command.interest;
 		parms.put("ReplyTo", command.id);
     }
     
@@ -73,6 +77,7 @@ public class AgentMessage {
 		source = (String) jo.get("source");
 		destination = (String) jo.get("destination");
 		topic = (String) jo.get("topic");
+		interest = (String) jo.get("interest");
 		parms = (Map<String, String>) jo.get("parms");
     }
     
@@ -100,6 +105,7 @@ public class AgentMessage {
         j.put("id", id);
         j.put("source", source);
         j.put("topic", topic);
+        j.put("interest", interest);
         j.put("destination", getDestination());
         j.put("parms", parms);
              
@@ -173,6 +179,16 @@ public class AgentMessage {
 	public void setTopic(String string) {
 		topic = string;
 	}
+	
+	public void setInterest(String interest)
+	{
+		this.interest = interest;
+	}
+	
+	public String getInterest()
+	{
+		return interest;
+	}
 
     public String getRoute() {
     	if (destination != "") {
@@ -183,7 +199,13 @@ public class AgentMessage {
     	return "";
     }
 
-	public String getTopic(String string) {
+	public String getTopic()
+	{
 		return topic;
+	}
+
+	public Set<Map.Entry<String,String>> getParams() //TODO May be unsafe; allows access to parms Map (may need to return an array instead)
+	{
+		return parms.entrySet();
 	}
 }
