@@ -8,6 +8,7 @@
 	<classpathentry kind="src" path="TextInput/src"/>
 	<classpathentry kind="src" path="TextInput/tests"/>
 	<classpathentry kind="src" path="TextOutput/src"/>
+	<classpathentry kind="src" path="Jokes"/>
 	<classpathentry kind="lib" path="Core/lib/amqp-client-4.0.2.jar"/>
 	<classpathentry kind="lib" path="Core/lib/json-simple-1.1.1.jar"/>
 	<classpathentry kind="lib" path="Core/lib/slf4j-api-1.7.21.jar"/>
