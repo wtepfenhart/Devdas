@@ -24,6 +24,10 @@ public class TextInput extends DevdasCore  {
 	/**
 	 * Has random variables to make testing easier
 	 */
+	public TextInput()
+	{
+		super(config);
+	}
 	public TextInput( Configuration config) {
 		// TODO Auto-generated constructor stub
 		super(config);
@@ -48,21 +52,41 @@ public class TextInput extends DevdasCore  {
 	//abstract methods
 	public void agentActivity()
 	{
-		System.out.println("Enter input:");
-		String msg = scanner.nextLine();
-		AgentMessage a = new AgentMessage();
-		if(msg.contains("?") == true)
+		
+		//Placeholder for Joker agent
+		DevdasCore j = new DevdasCore();
+		
+		if(j.isRunning() == true)
 		{
-			a.addParam("Subject", msg);
-			a.setTopic("ContextReliantText");
-			sendAgentMessage(a.getRoute(),a);
+			//Text Input is made to receive agent messages
+			//waits some arbitrary time for message
+			//message is saved and printed out 
+			//user responds to message
+			//if response is context reliant continue on until context free statement is sent
 		}
 		else
 		{
-			a.addParam("Subject",msg);
-			a.setTopic("Statement");
-			sendAgentMessage(a.getRoute(),a);
+			System.out.println("Enter input:");
+			String msg = scanner.nextLine();
+			AgentMessage a;
+			if(msg.contains("?") == true)
+			{
+				a = new AgentMessage();
+				a.addParam("Subject", msg);
+				a.setTopic("ContextReliantText");
+				sendAgentMessage(a.getRoute(),a);
+				processAgentMessage(a);
+			}
+			else
+			{
+				a = new AgentMessage();
+				a.addParam("Subject",msg);
+				a.setTopic("Statement");
+				sendAgentMessage(a.getRoute(),a);
+				processAgentMessage(a);
+			}
 		}
+		
 		
 	}
 	
@@ -70,6 +94,7 @@ public class TextInput extends DevdasCore  {
 	public void initializeAgentReactions() {
 		// TODO Auto-generated method stub
 		agentInterests.add("Statement");
+		agentReactions.put("Statement", new Statement());
 		agentInterests.add("ContextReliantText");
 	
 
@@ -113,6 +138,7 @@ public class TextInput extends DevdasCore  {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		t.run();
 		
 	}
 
