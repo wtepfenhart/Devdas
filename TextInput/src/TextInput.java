@@ -54,28 +54,41 @@ public class TextInput extends DevdasCore  {
 	{
 		
 		//Placeholder for Joker agent
+		
 		DevdasCore j = new DevdasCore();
 		
 		if(j.isRunning() == true)
 		{
-			//Text Input is made to receive agent messages
-			//waits some arbitrary time for message
-			//message is saved and printed out 
-			//user responds to message
-			//if response is context reliant continue on until context free statement is sent
+			//Substitute for actually code
+			try
+			{
+				Thread.sleep(50);
+			}
+			catch(InterruptedException e)
+			{
+				e.printStackTrace();
+			}
+			
 		}
 		else
-		{
+		
+		
 			System.out.println("Enter input:");
 			String msg = scanner.nextLine();
 			AgentMessage a;
 			if(msg.contains("?") == true)
 			{
 				a = new AgentMessage();
+				AgentMessage b = new AgentMessage();
 				a.addParam("Subject", msg);
 				a.setTopic("ContextReliantText");
 				sendAgentMessage(a.getRoute(),a);
-				processAgentMessage(a);
+				b.addParam("Subject", msg);
+				b.setTopic("ContextReliantText");
+				//Placeholder for jokes agent
+				b.setDestination("Jokes Agent");
+				sendAgentMessage(b.getRoute(),b);
+				
 			}
 			else
 			{
@@ -84,11 +97,12 @@ public class TextInput extends DevdasCore  {
 				a.setTopic("Statement");
 				sendAgentMessage(a.getRoute(),a);
 				processAgentMessage(a);
+				
 			}
 		}
 		
 		
-	}
+	//}
 	
 	@Override
 	public void initializeAgentReactions() {
@@ -96,7 +110,7 @@ public class TextInput extends DevdasCore  {
 		agentInterests.add("Statement");
 		agentReactions.put("Statement", new Statement());
 		agentInterests.add("ContextReliantText");
-	
+		agentReactions.put("ContextReliantText", new ContextReliantText());
 
 	}
 	
@@ -111,18 +125,20 @@ public class TextInput extends DevdasCore  {
 			System.out.println(cmd.getParam("Subject"));
 		}
 	 }
-	public class Question implements AgentReaction
-	{
-		public Question()
-		{
-			
-		}
-		public void execute(AgentMessage cmd)
-		{
-			
-		}
-	}
-	 
+	
+	 public class ContextReliantText implements AgentReaction
+	 {
+		 public ContextReliantText()
+		 {
+			 
+		 }
+		 public void execute(AgentMessage cmd)
+		 {
+			 System.out.println(cmd.getParam("Subject"));
+	
+			 
+		 }
+	 }
 	
 
 	
