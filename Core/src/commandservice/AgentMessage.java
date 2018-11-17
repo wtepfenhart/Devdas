@@ -22,7 +22,7 @@ import org.json.simple.JSONObject;
  */
 public class AgentMessage {
 
-	public static String hostID;
+	public static String hostID; //What is this set to by default?
 	
     private String id;
     private String source;
@@ -112,15 +112,11 @@ public class AgentMessage {
         return j.toJSONString();
     }
 
-    
-       
-////////////////////////////*SETTERS*////////////////////////////
     public void addParam(String key, String value)
     {		
     	parms.put(key, (value == null) ? "" : value);    	
     }
     
-////////////////////////////*GETTERS*////////////////////////////
     public String getParam(String key)
     {
     	return this.parms.get(key);
@@ -204,8 +200,8 @@ public class AgentMessage {
 		return topic;
 	}
 
-	public Set<Map.Entry<String,String>> getParams() //TODO May be unsafe; allows access to parms Map (may need to return an array instead)
+	public String[] getParams()
 	{
-		return parms.entrySet();
+		return (String[]) parms.entrySet().toArray();
 	}
 }

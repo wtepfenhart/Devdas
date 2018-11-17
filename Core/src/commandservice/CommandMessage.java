@@ -19,7 +19,7 @@ import org.json.simple.JSONObject;
  */
 public class CommandMessage
 {
-	public static String hostID;
+	public static String hostID; //What is this set to by default?
 	
     private String id;
     private String type;

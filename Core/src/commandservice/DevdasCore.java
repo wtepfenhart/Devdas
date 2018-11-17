@@ -426,6 +426,10 @@ public abstract class DevdasCore
 		}
 	}
 	
+	public String getHostID() //Why not a systemCommand? Or is it because a Logger is not an instance of DevdasCore?
+	{
+		return this.hostID;
+	}
 
 	////////////////////////////*METHODS USED BY COMMAND PROCESSORS*////////////////////////////
 	/**

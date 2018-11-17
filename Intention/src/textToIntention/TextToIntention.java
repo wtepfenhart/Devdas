@@ -1,7 +1,7 @@
 package textToIntention;
 
 import java.util.ArrayList;
-import java.util.Map;
+import java.util.Arrays;
 import commandservice.AgentMessage;
 import commandservice.AgentReaction;
 import commandservice.DevdasCore;
@@ -41,10 +41,9 @@ public class TextToIntention extends DevdasCore
 		{	
 			if(cmd.getTopic().equals("Announcement") && cmd.getInterest().equals("Interests") && (cmd.getDestination().isEmpty() || cmd.getDestination() == null))
 			{
-				for(Map.Entry<String, String> map : cmd.getParams()) //TODO Modify .getParams() to return one or more Strings; may have multiple keywords
-				{
-					addKeyToInterests(map.getKey(), new InterestInterpreter(map.getValue()));
-				}
+				String[] interests = Arrays.copyOfRange(cmd.getParams(), 1, cmd.getParams().length);
+					
+				addKeyToInterests(cmd.getParams()[0], new InterestInterpreter(cmd.getParams()[0], interests));
 			}
 		}
 	}
@@ -59,6 +58,7 @@ public class TextToIntention extends DevdasCore
 	public void agentActivity()
 	{
 		//TODO Send context as replyTo
+		
 		try
 		{
 			Thread.sleep(10);
@@ -70,11 +70,12 @@ public class TextToIntention extends DevdasCore
 		}
 	}
 	
-	public void announce()
+	public void announce() //May need to move up to Core
 	{
 		System.out.println(agentReactions.values());
 	}
 	
+	//TODO Make these methods access InterestInterpreters by their respective key
 	public void addKeyToInterests(String interestName, InterestInterpreter...keyToInterests)
 	{
 		for(InterestInterpreter key : keyToInterests)

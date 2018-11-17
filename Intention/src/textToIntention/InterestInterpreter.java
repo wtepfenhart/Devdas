@@ -33,10 +33,13 @@ public class InterestInterpreter implements AgentReaction
 		this.keywords = keywords;
 	}
 	
-	public InterestInterpreter(String interest, String keyword)
+	public InterestInterpreter(String interest, String...keywords)
 	{
 		this.keyToInterest = interest;
-		this.keywords.add(keyword);
+		for(String key : keywords)
+		{
+			this.keywords.add(key);
+		}
 	}
 	
 	/**
@@ -124,11 +127,11 @@ public class InterestInterpreter implements AgentReaction
 		{
 			if(i == (getKeywords().length - 1))
 			{
-				result += "\"" + keywords.toArray()[i] + "\"" + "}";
+				result += "\"" + keywords.toArray()[i].toString() + "\"" + "}";
 			}
 			else
 			{
-				result += "\"" + keywords.toArray()[i] + "\"" + ",";
+				result += "\"" + keywords.toArray()[i].toString() + "\"" + ",";
 			}
 		}
 		
@@ -138,7 +141,9 @@ public class InterestInterpreter implements AgentReaction
 	public void execute(AgentMessage cmd)
 	{
 		if(cmd.getTopic().equals("ContextFreeText"))
-		this.isInterested(cmd.getInterest());
+		{
+			this.isInterested(cmd.getInterest());
+		}
 	}
 	
 	/**
