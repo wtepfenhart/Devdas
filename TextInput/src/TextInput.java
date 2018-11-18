@@ -1,9 +1,6 @@
 /**
  * @author wtepfenhart
  *@author Nicholas-Jason Roache
-/**
- * @author wtepfenhart
- *@author Nicholas-Jason Roache
  *
  */
 
@@ -56,24 +53,8 @@ public class TextInput extends DevdasCore  {
 	public void agentActivity()
 	{
 		
-		//Placeholder for Joker agent
-		TextInput j = new TextInput();
-		
-		if(j.isRunning() == true)
-		{
-			//Substitute for actually code
-			try
-			{
-				Thread.sleep(50);
-			}
-			catch(InterruptedException e)
-			{
-				e.printStackTrace();
-			}
-			
-		}
-		else
-		
+			//Placeholder for Joker agent
+			TextInput j = new TextInput();
 		
 			System.out.println("Enter input:");
 			String msg = scanner.nextLine();
@@ -109,6 +90,17 @@ public class TextInput extends DevdasCore  {
 				processAgentMessage(a);
 				
 			}
+			if(j.isRunning()== true)
+			{
+				try
+				{
+					Thread.sleep(5000);
+				}
+				catch(InterruptedException e)
+				{
+					e.printStackTrace();
+				}
+			}
 		}
 		
 		
@@ -138,3 +130,5 @@ public class TextInput extends DevdasCore  {
 
 	
 }
+
+
