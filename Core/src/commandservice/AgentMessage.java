@@ -8,13 +8,15 @@
  */
 package commandservice;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 import java.util.UUID;
 
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 /**
  * @author wtepfenhart
@@ -29,7 +31,7 @@ public class AgentMessage {
     private String destination; 
     private String topic;
     private String interest;
-    private Map<String, String> parms = new HashMap<String, String>();
+    private Map<String, Collection<String>> parms = new HashMap<String, Collection<String>>();
     
     /**
      * Default constructor
@@ -51,14 +53,15 @@ public class AgentMessage {
     }
     
     
-    public AgentMessage(AgentMessage command)
+    @SuppressWarnings("serial")
+	public AgentMessage(AgentMessage command)
     {
     	id = (UUID.randomUUID()).toString();
 	    source = hostID;
 	    destination = command.source;
 	    topic = command.topic;
 	    interest = command.interest;
-		parms.put("ReplyTo", command.id);
+		parms.put("ReplyTo", new ArrayList<String>(){{add(command.id);}});
     }
     
   
@@ -78,7 +81,7 @@ public class AgentMessage {
 		destination = (String) jo.get("destination");
 		topic = (String) jo.get("topic");
 		interest = (String) jo.get("interest");
-		parms = (Map<String, String>) jo.get("parms");
+		parms = (Map<String, Collection<String>>) jo.get("parms");
     }
     
 
@@ -112,12 +115,35 @@ public class AgentMessage {
         return j.toJSONString();
     }
 
-    public void addParam(String key, String value)
-    {		
-    	parms.put(key, (value == null) ? "" : value);    	
+    @SuppressWarnings("serial")
+	public void addParam(String key, boolean replace, String... value)
+    {
+    	for (String v: value)
+		{
+	    	if (parms.containsKey(key))
+	    	{
+	    		if (replace)
+	    		{
+	    			parms.get(key).clear();
+	    			parms.get(key).add(v);
+	    		}
+	    		else
+	    			parms.get(key).add(v);
+	    	}
+	    	else
+	    	{
+	    		parms.put(key, new ArrayList<String>(){{add(v);}});
+	    	}
+		}
     }
     
-    public String getParam(String key)
+    //Assumes no replacement
+    public void addParam(String key, String... value)
+    {
+    	this.addParam(key, false, value);
+    }
+    
+    public Collection<String> getParam(String key)
     {
     	return this.parms.get(key);
     }
@@ -128,40 +154,34 @@ public class AgentMessage {
      */
     public static void main(String[] args)
     {
-/*        JSONObject o = new JSONObject();
-        o.put("Source", "Agent 1");
-        o.put("Destination", "Agent 2");
-        System.out.println(o);
-        
-        CommandMessage commander1 = new CommandMessage();
-        commander1.read(o.toJSONString());
-        
-        o.put("Command", "Start");
-        o.put("Response", "");
-        o.put("Explanation", "Why?");
-        System.out.println(o);
-        CommandMessage commander2 = new CommandMessage();
-        commander2.read(o);
-        
-        System.out.println("Com1: " + commander1);
-        System.out.println("Com2: " + commander2);
-        
-        commander1.addParam("Command", "Start");
-        
-        System.out.println("After ---> \tCom1: " + commander1);
-        
-        if(commander1.isCommand())
-        {
-            System.out.println(commander1.getParam("Command"));
-        }
-        else if (commander1.isResponse())
-        {
-            System.out.println(commander1.getParam("Response"));
-        }
-        else
-        {
-            System.out.println("No command nor response in cmd " + commander1.getParam("CommandID"));
-        } */
+    	AgentMessage cmd = new AgentMessage();
+    	
+    	cmd.addParam("SingleTest", "Wrd");
+    	cmd.addParam("DoubleTest", "Wrd1","Wrd2");
+    	
+    	System.out.println(cmd);
+    	
+    	JSONParser parser = new JSONParser();
+		JSONObject json;
+		try
+		{
+			json = (JSONObject) parser.parse(cmd.toJSONString());
+			AgentMessage msg = new AgentMessage(json);
+			
+			System.out.println("PARSED: " + msg);
+		}
+		catch (ParseException e)
+		{
+			e.printStackTrace();
+		}
+		
+		cmd.addParam("DoubleTest", false, "Wrd3");
+		
+		System.out.println(cmd);
+		
+		cmd.addParam("DoubleTest", true, "replacement");
+		
+		System.out.println(cmd);
     }
 
 	public String getDestination() {
@@ -199,9 +219,22 @@ public class AgentMessage {
 	{
 		return topic;
 	}
-
-	public String[] getParams()
+	
+	public String getSource()
 	{
-		return (String[]) parms.entrySet().toArray();
+		return source;
+	}
+	
+	//TODO Replace immediately
+	/**
+	 *Returns all known parameters
+	 *
+	 * @deprecated Unsafe, as it allows access to the Map; must be changed
+	 * @return
+	 */
+	@Deprecated
+	public Map<String, Collection<String>> getAllParams()
+	{
+		return parms;
 	}
 }

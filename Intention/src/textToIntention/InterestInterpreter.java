@@ -1,6 +1,7 @@
 package textToIntention;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Scanner;
 import commandservice.AgentMessage;
 import commandservice.AgentReaction;
@@ -12,30 +13,21 @@ import commandservice.AgentReaction;
  */
 public class InterestInterpreter implements AgentReaction
 {
-	private String keyToInterest;
-	private ArrayList<String> keywords;
+	private ArrayList<String> keywords = new ArrayList<>();
 	
 	public InterestInterpreter()
-	{
-		this.keyToInterest = new String();
-		this.keywords = new ArrayList<String>();
+	{}
+	
+	public InterestInterpreter(String... keywords)
+	{	
+		for(String key : keywords)
+		{
+			this.keywords.add(key);
+		}
 	}
 	
-	public InterestInterpreter(String keyToInterest)
-	{
-		this.keyToInterest = keyToInterest;
-		this.keywords = new ArrayList<String>();
-	}
-	
-	public InterestInterpreter(String interest, ArrayList<String> keywords)
-	{
-		this.keyToInterest = interest;
-		this.keywords = keywords;
-	}
-	
-	public InterestInterpreter(String interest, String...keywords)
-	{
-		this.keyToInterest = interest;
+	public InterestInterpreter(Collection<String> keywords)
+	{	
 		for(String key : keywords)
 		{
 			this.keywords.add(key);
@@ -92,7 +84,7 @@ public class InterestInterpreter implements AgentReaction
 	
 	public void modifyKeyword(String target, String newInterest)
 	{
-		if(!keyToInterest.contains(target)) //Avoids modifying something that does not exist
+		if(!keywords.contains(target)) //Avoids modifying something that does not exist
 		{
 			this.addKeyword(target);
 		}
@@ -103,16 +95,6 @@ public class InterestInterpreter implements AgentReaction
 		}
 	}
 	
-	public String getKeyToInterest()
-	{
-		return keyToInterest;
-	}
-	
-	public void setKeyToInterest(String key)
-	{
-		this.keyToInterest = key;
-	}
-	
 	public Object[] getKeywords()
 	{
 		return keywords.toArray();
@@ -121,7 +103,7 @@ public class InterestInterpreter implements AgentReaction
 	@Override
 	public String toString()
 	{
-		String result = "\"" + getKeyToInterest() + "\"" + ":" + "{";
+		String result = "{";
 		
 		for(int i = 0; i < getKeywords().length; i++)
 		{
@@ -177,7 +159,7 @@ public class InterestInterpreter implements AgentReaction
 			
 		System.out.println("========================================");
 		
-		InterestInterpreter interpreter = new InterestInterpreter("Test", keywords);
+		InterestInterpreter interpreter = new InterestInterpreter(keywords);
 		
 		System.out.println(interpreter);
 		

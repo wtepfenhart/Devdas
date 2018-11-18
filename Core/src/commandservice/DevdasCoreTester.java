@@ -1,5 +1,6 @@
 package commandservice;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import devdas.Configuration;
@@ -36,7 +37,7 @@ public class DevdasCoreTester extends DevdasCore
 	}
 
 	public void test(AgentMessage msg) {
-		String s = (String) msg.getParam("Say");
+		String s = ((ArrayList<String>) msg.getParam("Say")).get(0);
 		System.out.println(s);
 	}
 

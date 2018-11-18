@@ -1,11 +1,10 @@
 package textToIntention;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import commandservice.AgentMessage;
 import commandservice.AgentReaction;
 import commandservice.DevdasCore;
-import devdas.Configuration;
+import devdas.Configuration; 
 
 /**
  * A {@code TextToIntention} Agent serves to interpret raw, context-free text into commands that will be sent out to other Agents.
@@ -16,7 +15,7 @@ import devdas.Configuration;
  */
 public class TextToIntention extends DevdasCore
 {
-	private ArrayList<InterestInterpreter> keyToInterests;
+	private HashMap<String, InterestInterpreter> keyToInterests = new HashMap<>();
 	
 	public TextToIntention(Configuration config)
 	{
@@ -41,9 +40,12 @@ public class TextToIntention extends DevdasCore
 		{	
 			if(cmd.getTopic().equals("Announcement") && cmd.getInterest().equals("Interests") && (cmd.getDestination().isEmpty() || cmd.getDestination() == null))
 			{
-				String[] interests = Arrays.copyOfRange(cmd.getParams(), 1, cmd.getParams().length);
-					
-				addKeyToInterests(cmd.getParams()[0], new InterestInterpreter(cmd.getParams()[0], interests));
+				//System.err.println("Received " + cmd);
+				//System.out.println(cmd.getParam("Interests"));
+				
+				addKeyToInterests(cmd.getSource(), new InterestInterpreter(cmd.getParam("Interests")));
+				
+				//announce();
 			}
 		}
 	}
@@ -51,8 +53,9 @@ public class TextToIntention extends DevdasCore
 	public void initializeAgentReactions()
 	{
 		agentInterests.add("Announcement");
+		agentReactions.put("Announcement", new Initializer());
+		
 		agentInterests.add("ContextFreeText");
-		agentReactions.put("Interests", new Initializer());
 	}
 	
 	public void agentActivity()
@@ -72,48 +75,38 @@ public class TextToIntention extends DevdasCore
 	
 	public void announce() //May need to move up to Core
 	{
-		System.out.println(agentReactions.values());
+		System.out.println(agentReactions);
+		System.out.println(keyToInterests);
 	}
 	
 	//TODO Make these methods access InterestInterpreters by their respective key
-	public void addKeyToInterests(String interestName, InterestInterpreter...keyToInterests)
+	public void addKeyToInterests(String agent, InterestInterpreter...keyToInterests)
 	{
 		for(InterestInterpreter key : keyToInterests)
 		{
-			if (!this.keyToInterests.contains(key))
-			{
-				this.keyToInterests.add(key);
-				agentReactions.put(interestName, key);
-			}
-			else
-			{
-				modifyKeyToInterests(interestName, key);
-			}
+			this.keyToInterests.put(agent, key);
+			agentReactions.put("ContextFreeText", key);
 		}
 	}
 	
-	public void removeKeyToInterests(InterestInterpreter...keyToInterests)
+	public void removeKeyToInterests(String agent, InterestInterpreter...keyToInterests)
 	{
 		for(InterestInterpreter key : keyToInterests)
 		{
-			if (!this.keyToInterests.contains(key))
+			if (this.keyToInterests.containsValue(key))
 			{
 				if(this.keyToInterests.size() > 1)
 				{
-					this.keyToInterests.remove(key);
-					agentReactions.remove("Interests", key);
+					this.keyToInterests.remove(agent, key);
+					agentReactions.remove("ContextFreeText", key);
 				}
-			}
-			else
-			{
-				//Should we log an error?
 			}
 		}
 	}
 	
 	public void modifyKeyToInterests(String target, InterestInterpreter newKey)
 	{
-		agentReactions.replace("Interests", agentReactions.get(target), newKey);
+		agentReactions.replace("ContextFreeText", agentReactions.get(target), newKey);
 	}
 
 	/**
