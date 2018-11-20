@@ -6,6 +6,11 @@ import commandservice.AgentMessage;
 import commandservice.DevdasCore;
 import devdas.Configuration;
 
+/**
+ * Testing class for {@link TextToIntention} functionality. Used to mimic the behavior of a potential Agent.
+ * 
+ * @author B-T-Johnson
+ */
 public class IntentionTester extends DevdasCore
 {
 	Scanner scanner;

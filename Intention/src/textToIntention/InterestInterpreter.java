@@ -7,27 +7,29 @@ import commandservice.AgentMessage;
 import commandservice.AgentReaction;
 
 /**
- * An {@code InterestInterpreter} searches an input of raw text (non-contextual) for any possible interest that matches the keywords assigned to the interest in question
+ * An {@code InterestInterpreter} searches an input of raw text (non-contextual) for any possible interest that matches the keywords assigned to the interest in question.
  * 
  * @author B-T-Johnson
  */
 public class InterestInterpreter implements AgentReaction
 {
+	private String keyToInterest;
 	private ArrayList<String> keywords = new ArrayList<>();
 	
-	public InterestInterpreter()
-	{}
-	
-	public InterestInterpreter(String... keywords)
-	{	
+	public InterestInterpreter(String keyToInterest, String... keywords)
+	{
+		this.keyToInterest = keyToInterest;
+		
 		for(String key : keywords)
 		{
 			this.keywords.add(key);
 		}
 	}
 	
-	public InterestInterpreter(Collection<String> keywords)
-	{	
+	public InterestInterpreter(String keyToInterest, Collection<String> keywords)
+	{
+		this.keyToInterest = keyToInterest;
+		
 		for(String key : keywords)
 		{
 			this.keywords.add(key);
@@ -95,29 +97,15 @@ public class InterestInterpreter implements AgentReaction
 		}
 	}
 	
-	public Object[] getKeywords()
+	public String getKeywords()
 	{
-		return keywords.toArray();
+		return keywords.toString();
 	}
 	
 	@Override
 	public String toString()
 	{
-		String result = "{";
-		
-		for(int i = 0; i < getKeywords().length; i++)
-		{
-			if(i == (getKeywords().length - 1))
-			{
-				result += "\"" + keywords.toArray()[i].toString() + "\"" + "}";
-			}
-			else
-			{
-				result += "\"" + keywords.toArray()[i].toString() + "\"" + ",";
-			}
-		}
-		
-		return result;
+		return "{" + keyToInterest + ":" + getKeywords() + "}";
 	}
 	
 	public void execute(AgentMessage cmd)
@@ -159,7 +147,7 @@ public class InterestInterpreter implements AgentReaction
 			
 		System.out.println("========================================");
 		
-		InterestInterpreter interpreter = new InterestInterpreter(keywords);
+		InterestInterpreter interpreter = new InterestInterpreter("Test", keywords);
 		
 		System.out.println(interpreter);
 		

@@ -116,7 +116,7 @@ public class AgentMessage {
     }
 
     @SuppressWarnings("serial")
-	public void addParam(String key, boolean replace, String... value)
+	public void addParam(boolean replace, String key, String... value)
     {
     	for (String v: value)
 		{
@@ -140,7 +140,7 @@ public class AgentMessage {
     //Assumes no replacement
     public void addParam(String key, String... value)
     {
-    	this.addParam(key, false, value);
+    	this.addParam(false, key, value);
     }
     
     public Collection<String> getParam(String key)
@@ -175,11 +175,11 @@ public class AgentMessage {
 			e.printStackTrace();
 		}
 		
-		cmd.addParam("DoubleTest", false, "Wrd3");
+		cmd.addParam(false, "DoubleTest", "Wrd3");
 		
 		System.out.println(cmd);
 		
-		cmd.addParam("DoubleTest", true, "replacement");
+		cmd.addParam(true, "DoubleTest", "replacement");
 		
 		System.out.println(cmd);
     }
