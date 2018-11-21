@@ -53,79 +53,42 @@ public class TextInput extends DevdasCore  {
 	public void agentActivity()
 	{
 		
-		//Placeholder for Joker agent
-		DevdasCore j = new DevdasCore();
+			//Placeholder for Joker agent
+			TextInput j = new TextInput();
 		
-		if(j.isRunning() == true)
-		{
-			//Text Input is made to receive agent messages
-			//waits some arbitrary time for message
-			//message is saved and printed out 
-			//user responds to message
-			//if response is context reliant continue on until context free statement is sent
-		}
-		else
-		{
 			System.out.println("Enter input:");
 			String msg = scanner.nextLine();
-			AgentMessage a;
-			if(msg.contains("?") == true)
+			AgentMessage a = new AgentMessage();
+			
+			if(a.getDestination() != "")
 			{
-				a = new AgentMessage();
+				//Agent Message is sent to designated agent
 				a.addParam("Subject", msg);
 				a.setTopic("ContextReliantText");
 				sendAgentMessage(a.getRoute(),a);
-				processAgentMessage(a);
+				//Agent Message is sent to text output (default agent)
+				AgentMessage b = new AgentMessage();
+				b.addParam("Subject", msg);
+				b.setTopic("ContextReliantText");
+				sendAgentMessage(b.getRoute(),b);
 			}
 			else
 			{
-				a = new AgentMessage();
-				a.addParam("Subject",msg);
-				a.setTopic("Statement");
+				a.addParam("Subject", msg);
+				a.setTopic("ContextFreeText");
 				sendAgentMessage(a.getRoute(),a);
-				processAgentMessage(a);
 			}
 		}
 		
 		
-	}
+	//}
 	
 	@Override
 	public void initializeAgentReactions() {
 		// TODO Auto-generated method stub
-		agentInterests.add("Statement");
-		agentReactions.put("Statement", new Statement());
-		agentInterests.add("ContextReliantText");
-	
 
 	}
-	
-	 public class Statement implements AgentReaction
-	 {
-		public Statement()
-		{
-			
-		}
-		public void execute(AgentMessage cmd)
-		{
-			System.out.println(cmd.getParam("Subject"));
-		}
-	 }
-	public class Question implements AgentReaction
-	{
-		public Question()
-		{
-			
-		}
-		public void execute(AgentMessage cmd)
-		{
-			
-		}
-	}
-	 
-	
 
-	
 
 	public static void main(String[] args)  {
 		// TODO Auto-generated method stub
@@ -144,4 +107,5 @@ public class TextInput extends DevdasCore  {
 
 	
 }
+
 
