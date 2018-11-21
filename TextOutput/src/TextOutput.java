@@ -50,8 +50,8 @@ public class TextOutput extends DevdasCore{
 	@Override
 	public void initializeAgentReactions() {
 		// TODO Auto-generated method stub
-		agentInterests.add("Statement");
-		agentReactions.put("Statement", new Say());
+		agentInterests.add("ContextFreeText");
+		agentReactions.put("ContextFreeText", new Say());
 		agentInterests.add("ContextReliantText");
 		agentReactions.put("ContextReliantText", new Say());
 	}
