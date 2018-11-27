@@ -31,7 +31,7 @@ public class AgentMessage {
     private String destination; 
     private String topic;
     private String interest;
-    private Map<String, Collection<String>> parms = new HashMap<String, Collection<String>>();
+    private Map<String, ArrayList<String>> parms = new HashMap<String, ArrayList<String>>();
     
     /**
      * Default constructor
@@ -81,7 +81,7 @@ public class AgentMessage {
 		destination = (String) jo.get("destination");
 		topic = (String) jo.get("topic");
 		interest = (String) jo.get("interest");
-		parms = (Map<String, Collection<String>>) jo.get("parms");
+		parms = (Map<String, ArrayList<String>>) jo.get("parms");
     }
     
 
@@ -143,7 +143,7 @@ public class AgentMessage {
     	this.addParam(false, key, value);
     }
     
-    public Collection<String> getParam(String key)
+    public ArrayList<String> getParam(String key)
     {
     	return this.parms.get(key);
     }
@@ -233,7 +233,7 @@ public class AgentMessage {
 	 * @return
 	 */
 	@Deprecated
-	public Map<String, Collection<String>> getAllParams()
+	public Map<String, ArrayList<String>> getAllParams()
 	{
 		return parms;
 	}

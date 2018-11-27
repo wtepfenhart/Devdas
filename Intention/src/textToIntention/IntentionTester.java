@@ -13,8 +13,8 @@ import devdas.Configuration;
  */
 public class IntentionTester extends DevdasCore
 {
-	Scanner scanner;
-	private int i = 0;
+	private Scanner scanner;
+	private boolean notDone = true;
 	
 	public IntentionTester(Configuration config)
 	{
@@ -28,8 +28,8 @@ public class IntentionTester extends DevdasCore
 
 	@Override
 	public void agentActivity()
-	{	
-		if(i == 0)
+	{
+		if(notDone)
 		{
 			String[] keywords = {"Apple","Orange","Pineapple"};
 			AgentMessage a = new AgentMessage();
@@ -38,15 +38,15 @@ public class IntentionTester extends DevdasCore
 			a.setInterest("Interests");
 			sendAgentMessage(a.getRoute(),a);
 			
-			i = 1;
+			notDone = false;
 		}
 		
 		System.out.print("Enter string to send: ");
 		String msg = scanner.nextLine();
-		AgentMessage a = new AgentMessage();
-		a.addParam("Text",msg);
-		a.setTopic("ContextFreeText");
-		sendAgentMessage(a.getRoute(),a);
+		AgentMessage b = new AgentMessage();
+		b.addParam("Text", msg);
+		b.setTopic("ContextFreeText");
+		sendAgentMessage(b.getRoute(), b);
 	}
 	
 	public static void main(String[] args)

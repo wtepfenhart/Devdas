@@ -40,48 +40,31 @@ public class TextToIntention extends DevdasCore
 		{	
 			if(cmd.getTopic().equals("Announcement") && cmd.getInterest().equals("Interests") && (cmd.getDestination().isEmpty() || cmd.getDestination() == null))
 			{
-				//System.err.println("Received " + cmd);
+				System.err.println("Received InterestCommand " + cmd);
 				//System.out.println(cmd.getParam("Interests"));
 				
 				addKeyToInterests(cmd.getSource(), new InterestInterpreter(cmd.getSource(), cmd.getParam("Interests")));
 				
 				
 				//Testing KeyToInterests methods
-/*				announce();
-				
-				InterestInterpreter dummy = new InterestInterpreter("DUMMY", "BLANK");
-				modifyKeyToInterests(cmd.getSource(), dummy);
-				
-				announce();
-				
-				InterestInterpreter dummy2 = new InterestInterpreter("NEW_DUMMY", "BLANK");
-				addKeyToInterests("NEW_DUMMY", dummy2);
-				
-				announce();
-				
-				removeKeyToInterests(cmd.getSource(), dummy);
-				
-				announce();
-*/
+/*				
+ * 				announce();
+ *				
+ *				InterestInterpreter dummy = new InterestInterpreter("DUMMY", "BLANK");
+ *				modifyKeyToInterests(cmd.getSource(), dummy);
+ *				
+ *				announce();
+ *				
+ *				InterestInterpreter dummy2 = new InterestInterpreter("NEW_DUMMY", "BLANK");
+ *				addKeyToInterests("NEW_DUMMY", dummy2);
+ *				
+ *				announce();
+ *				
+ *				removeKeyToInterests(cmd.getSource(), dummy);
+ *				
+ *				announce();
+ */
 			}
-		}
-	}
-
-	/**
-	 * Reads in context-free text from an {@link AgentMessage} and produces the required context-reliant text for the particular Agent
-	 */
-	private class Translator implements AgentReaction //Is there a better name for this?
-	{
-		/**
-		 * Default constructor
-		 */
-		private Translator()
-		{}
-		
-		@Override
-		public void execute(AgentMessage command)
-		{
-			// TODO Auto-generated method stub
 		}
 	}
 	
@@ -91,7 +74,6 @@ public class TextToIntention extends DevdasCore
 		agentReactions.put("Announcement", new Initializer());
 		
 		agentInterests.add("ContextFreeText");
-		//TODO Add reaction to ContextFreeText; ContextFreeTextToContextReliantText/Translator class?
 	}
 	
 	public void agentActivity()

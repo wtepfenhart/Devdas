@@ -46,16 +46,17 @@ public class InterestInterpreter implements AgentReaction
 	{
 		int count = 0;
 		
-		for(String word : contextFreeText.split(" "))
-		{
-			for(String key : keywords)
+		if(contextFreeText != null)
+			for(String word : contextFreeText.split(" "))
 			{
-				if(word.toLowerCase().contains(key.toLowerCase()))
+				for(String key : keywords)
 				{
-					count++;
+					if(word.toLowerCase().contains(key.toLowerCase()))
+					{
+						count++;
+					}
 				}
 			}
-		}
 		
 		return count;
 	}
@@ -110,9 +111,12 @@ public class InterestInterpreter implements AgentReaction
 	
 	public void execute(AgentMessage cmd)
 	{
+		System.err.println("Received RawTextCommand " + cmd);
+		
 		if(cmd.getTopic().equals("ContextFreeText"))
 		{
-			this.isInterested(cmd.getInterest());
+			System.err.println("\tTEXT: " + cmd.getParam("Text").get(0));
+			System.err.println("\tMATCHES: " + this.isInterested(cmd.getParam("Text").get(0))); //TODO Send a message to proper recipient
 		}
 	}
 	
