@@ -53,13 +53,20 @@ public class TextInput extends DevdasCore  {
 	public void agentActivity()
 	{
 		
-			//Placeholder for Joker agent
-			TextInput j = new TextInput();
+			
 		
 			System.out.println("Enter input:");
 			String msg = scanner.nextLine();
 			AgentMessage a = new AgentMessage();
-			
+			System.out.println("Do you want to send the message to any specfic place?");
+			String answer = scanner.next();
+			if(answer.equals("Yes"))
+			{
+				System.out.println("Where do you want to send it?");
+				String d = scanner.nextLine();
+				a.setDestination(d);
+			}
+				
 			if(a.getDestination() != "")
 			{
 				//Agent Message is sent to designated agent
