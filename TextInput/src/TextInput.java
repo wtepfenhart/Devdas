@@ -21,6 +21,29 @@ public class TextInput extends DevdasCore  {
 	//constants
 	private final static String QUEUE_NAME = "Request";
 	
+/**
+ * @author wtepfenhart
+ *@author Nicholas-Jason Roache
+ *
+ */
+
+//import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Scanner;
+import commandservice.DevdasCore;
+import devdas.Configuration;
+import commandservice.AgentReaction;
+import commandservice.AgentMessage;
+public class TextInput extends DevdasCore  {
+
+	
+	Scanner scanner;
+	private static Configuration config;
+	//constants
+	private final static String QUEUE_NAME = "Request";
+	
 	/**
 	 * Has random variables to make testing easier
 	 */
@@ -65,24 +88,21 @@ public class TextInput extends DevdasCore  {
 				System.out.println("Where do you want to send it?");
 				String d = scanner.nextLine();
 				a.setDestination(d);
-			}
-				
-			if(a.getDestination() != "")
-			{
 				//Agent Message is sent to designated agent
-				a.addParam("Subject", msg);
 				a.setTopic("ContextReliantText");
+				a.addParam("Subject", msg);
 				sendAgentMessage(a.getRoute(),a);
 				//Agent Message is sent to text output (default agent)
 				AgentMessage b = new AgentMessage();
-				b.addParam("Subject", msg);
 				b.setTopic("ContextReliantText");
+				b.addParam("Subject", msg);
 				sendAgentMessage(b.getRoute(),b);
 			}
-			else
+				
+			else if(answer.equals("No"))
 			{
-				a.addParam("Subject", msg);
 				a.setTopic("ContextFreeText");
+				a.addParam("Subject", msg);
 				sendAgentMessage(a.getRoute(),a);
 			}
 		}
@@ -114,4 +134,6 @@ public class TextInput extends DevdasCore  {
 
 	
 }
+
+
 
