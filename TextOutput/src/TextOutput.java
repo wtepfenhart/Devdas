@@ -60,15 +60,10 @@ public class TextOutput extends DevdasCore{
 
 	@Override
 	public void agentActivity() {
-		// TODO Auto-generated method stub
-		try
-		{
-			Thread.sleep(5);
-		}
-		catch(InterruptedException e)
-		{
-			e.printStackTrace();
-		}
+		// Placeholder Text
+		AgentMessage m = new AgentMessage();
+		String topic = m.getTopic("Topic");
+		getAgentReaction(topic);
 		
 	}
 	public static void main(String [] args)
@@ -78,3 +73,4 @@ public class TextOutput extends DevdasCore{
 		tester.run();
 	}
 }
+
