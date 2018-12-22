@@ -50,25 +50,20 @@ public class TextOutput extends DevdasCore{
 	@Override
 	public void initializeAgentReactions() {
 		// TODO Auto-generated method stub
-		agentInterests.add("Announcement");
-		agentReactions.put("Announcement", new Say());
-		agentInterests.add("Question");
-		agentReactions.put("Question", new Say());
+		agentInterests.add("ContextFreeText");
+		agentReactions.put("ContextFreeText", new Say());
+		agentInterests.add("ContextReliantText");
+		agentReactions.put("ContextReliantText", new Say());
 	}
 
 	
 
 	@Override
 	public void agentActivity() {
-		// TODO Auto-generated method stub
-		try
-		{
-			Thread.sleep(10);
-		}
-		catch(InterruptedException e)
-		{
-			e.printStackTrace();
-		}
+		// Placeholder Text
+		AgentMessage m = new AgentMessage();
+		String topic = m.getTopic("Topic");
+		getAgentReaction(topic);
 		
 	}
 	public static void main(String [] args)
@@ -78,3 +73,4 @@ public class TextOutput extends DevdasCore{
 		tester.run();
 	}
 }
+
