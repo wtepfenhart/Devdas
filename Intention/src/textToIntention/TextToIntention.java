@@ -45,6 +45,7 @@ public class TextToIntention extends DevdasCore
 				
 				addKeyToInterests(cmd.getSource(), new InterestInterpreter(cmd.getSource(), cmd.getParam("Interests")));
 				
+				announce();
 				
 				//Testing KeyToInterests methods
 /*				
@@ -98,10 +99,21 @@ public class TextToIntention extends DevdasCore
 	
 	public void addKeyToInterests(String agent, InterestInterpreter keyToInterest)
 	{
-		if(!this.keyToInterests.containsValue(keyToInterest))
+		if(!this.keyToInterests.containsKey(agent))
 		{
 			this.keyToInterests.put(agent, keyToInterest);
-			agentReactions.put("ContextFreeText", keyToInterest);
+			
+			//Pull all currently known keys from agentReactions
+			InterestInterpreter appendedKey = (InterestInterpreter) agentReactions.remove("ContextFreeText");
+			
+			//Make any necessary replacement(s) to keywords
+			if (appendedKey != null)
+				appendedKey.addKeyword(keyToInterest.getKeywords()); //TODO BUG IS SOMEWHERE HERE
+			else													 // ""
+				appendedKey = keyToInterest;						 // ""
+																	 // ""
+			//Put appended keys back into agentReactions			 // ""
+			agentReactions.put("ContextFreeText", appendedKey);		 // ""
 		}
 		else
 		{

@@ -1,5 +1,6 @@
 package textToIntention;
 
+import java.util.ArrayList;
 import java.util.Scanner;
 
 import commandservice.AgentMessage;
@@ -13,13 +14,14 @@ import devdas.Configuration;
  */
 public class IntentionTester extends DevdasCore
 {
-	private Scanner scanner;
+	private static Scanner scanner = new Scanner(System.in);
 	private boolean notDone = true;
+	private String[] keywords;
 	
-	public IntentionTester(Configuration config)
+	public IntentionTester(Configuration config, String... keywords)
 	{
 		super(config);
-		scanner = new Scanner(System.in);
+		this.keywords = keywords;
 	}
 
 	@Override
@@ -31,12 +33,11 @@ public class IntentionTester extends DevdasCore
 	{
 		if(notDone)
 		{
-			String[] keywords = {"Apple","Orange","Pineapple"};
 			AgentMessage a = new AgentMessage();
 			a.addParam("Interests", keywords);
 			a.setTopic("Announcement");
 			a.setInterest("Interests");
-			sendAgentMessage(a.getRoute(),a);
+			sendAgentMessage(a.getRoute(), a);
 			
 			notDone = false;
 		}
@@ -52,7 +53,27 @@ public class IntentionTester extends DevdasCore
 	public static void main(String[] args)
 	{
 		Configuration config = new Configuration(args);
-		IntentionTester tester = new IntentionTester(config);
+		ArrayList<String> keywords = new ArrayList<String>();
+		
+		System.out.println("===== YOU ARE ALLOWED A MAXIMUM OF 10 KEYWORDS =====");
+		
+		for(int i = 0; i < 10; i++)
+		{
+			System.out.print("Enter a keyword to target (-1 to stop): ");
+			String response = scanner.nextLine();
+			
+			if(response.equals("-1"))
+			{
+				break;
+			}
+			else
+			{
+				keywords.add(response);
+			}
+		}
+		System.out.println("====================================================");
+		
+		IntentionTester tester = new IntentionTester(config, keywords.toArray(new String[keywords.size()]));
 		tester.run();
 	}
 }

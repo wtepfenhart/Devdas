@@ -51,7 +51,11 @@ public class InterestInterpreter implements AgentReaction
 			{
 				for(String key : keywords)
 				{
-					if(word.toLowerCase().contains(key.toLowerCase()))
+					if(key == null)
+					{
+						System.err.println("NULL");//ERROR; keys should never be null
+					}
+					else if(word.toLowerCase().contains(key.toLowerCase()))
 					{
 						count++;
 					}
@@ -61,15 +65,18 @@ public class InterestInterpreter implements AgentReaction
 		return count;
 	}
 	
-	public void addKeyword(String interest)
+	public void addKeyword(String... interest)
 	{
-		if(!keywords.contains(interest)) //Avoids duplicates
+		for(String word: interest)
 		{
-			this.keywords.add(interest);
-		}
-		else
-		{
-			//Should we log an error here?
+			if(!this.keywords.contains(word)) //Avoids duplicates
+			{
+				this.keywords.add(word);
+			}
+			else
+			{
+				//Should we log an error here?
+			}
 		}
 	}
 	
@@ -98,15 +105,15 @@ public class InterestInterpreter implements AgentReaction
 		}
 	}
 	
-	public String getKeywords()
+	public String[] getKeywords()
 	{
-		return keywords.toString();
+		return keywords.toArray(new String[keywords.size()]);
 	}
 	
 	@Override
 	public String toString()
 	{
-		return "{" + keyToInterest + ":" + getKeywords() + "}";
+		return "{" + keyToInterest + ":" + keywords.toString() + "}";
 	}
 	
 	public void execute(AgentMessage cmd)
