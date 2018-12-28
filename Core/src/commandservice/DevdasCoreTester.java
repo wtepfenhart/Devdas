@@ -31,8 +31,9 @@ public class DevdasCoreTester extends DevdasCore
 		agentInterests.add("All");
 		agentInterests.add("Command");
 		
-		HashMap<String,AgentReaction> result = new HashMap<String,AgentReaction>();
-		result.put("Say", new TestService(this));
+		HashMap<String, ArrayList<AgentReaction>> result = new HashMap<String, ArrayList<AgentReaction>>();
+		TestService test = new TestService(this);
+		result.put("Say", new ArrayList<AgentReaction>(){{add(test);}});
 		agentReactions = result;
 	}
 

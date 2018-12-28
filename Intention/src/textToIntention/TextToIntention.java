@@ -1,5 +1,6 @@
 package textToIntention;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import commandservice.AgentMessage;
 import commandservice.AgentReaction;
@@ -15,7 +16,7 @@ import devdas.Configuration;
  */
 public class TextToIntention extends DevdasCore
 {
-	private HashMap<String, InterestInterpreter> keyToInterests = new HashMap<>();
+	private ArrayList<AgentReaction> keyToInterests = new ArrayList<AgentReaction>();
 	
 	public TextToIntention(Configuration config)
 	{
@@ -72,9 +73,9 @@ public class TextToIntention extends DevdasCore
 	public void initializeAgentReactions()
 	{
 		agentInterests.add("Announcement");
-		agentReactions.put("Announcement", new Initializer());
-		
 		agentInterests.add("ContextFreeText");
+		
+		agentReactions.put("Announcement", new ArrayList<AgentReaction>(){{add(new Initializer());}});
 	}
 	
 	public void agentActivity()
@@ -99,37 +100,26 @@ public class TextToIntention extends DevdasCore
 	
 	public void addKeyToInterests(String agent, InterestInterpreter keyToInterest)
 	{
-		if(!this.keyToInterests.containsKey(agent))
+		if(!this.keyToInterests.contains(keyToInterest))
 		{
-			this.keyToInterests.put(agent, keyToInterest);
-			
-			//Pull all currently known keys from agentReactions
-			InterestInterpreter appendedKey = (InterestInterpreter) agentReactions.remove("ContextFreeText");
-			
-			//Make any necessary replacement(s) to keywords
-			if (appendedKey != null)
-				appendedKey.addKeyword(keyToInterest.getKeywords()); //TODO BUG IS SOMEWHERE HERE
-			else													 // ""
-				appendedKey = keyToInterest;						 // ""
-																	 // ""
-			//Put appended keys back into agentReactions			 // ""
-			agentReactions.put("ContextFreeText", appendedKey);		 // ""
+			keyToInterests.add(keyToInterest);
+			agentReactions.put("ContextFreeText", keyToInterests);
 		}
 		else
 		{
-			this.keyToInterests.get(agent).addKeyword(keyToInterest.getKeywords()); //TODO Have not tested
+			this.agentReactions.get("ContextFreeText").add(keyToInterest);
 		}
 	}
-	
+/*	
 	public void removeKeyToInterests(String agent, InterestInterpreter...keyToInterests)
 	{
 		for(InterestInterpreter key : keyToInterests)
 		{
-			if (this.keyToInterests.containsValue(key))
+			if (this.keyToInterests.contains(agent))
 			{
 				if(this.keyToInterests.size() > 1)
 				{
-					this.keyToInterests.remove(agent, key);
+					this.keyToInterests.removeAll(c)(agent, key);
 					agentReactions.remove("ContextFreeText", key);
 				}
 			}
@@ -141,7 +131,7 @@ public class TextToIntention extends DevdasCore
 	{
 		for(InterestInterpreter key : newKey)
 		{
-			this.keyToInterests.replace(target, keyToInterests.get(target), key);
+			this.keyToInterests.replace(target, keyToInterests.get(target), (ArrayList<String>) key.getKeywords());
 			agentReactions.replace("ContextFreeText", agentReactions.get(target), key);
 		}
 	}

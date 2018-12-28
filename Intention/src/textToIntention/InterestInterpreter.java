@@ -26,7 +26,7 @@ public class InterestInterpreter implements AgentReaction
 		}
 	}
 	
-	public InterestInterpreter(String keyToInterest, Collection<String> keywords)
+	public InterestInterpreter(String keyToInterest, Collection<? extends String> keywords)
 	{
 		this.keyToInterest = keyToInterest;
 		
@@ -80,6 +80,11 @@ public class InterestInterpreter implements AgentReaction
 		}
 	}
 	
+	public void addKeyword(Collection<? extends String> interest)
+	{
+		addKeyword(interest.toArray(new String[interest.size()]));
+	}
+	
 	public void removeKeyword(String interest)
 	{
 		if(keywords.size() > 1) //Should never remove all keywords; must have at least one keyword
@@ -105,9 +110,9 @@ public class InterestInterpreter implements AgentReaction
 		}
 	}
 	
-	public String[] getKeywords()
+	public Collection<? extends String> getKeywords()
 	{
-		return keywords.toArray(new String[keywords.size()]);
+		return keywords;
 	}
 	
 	@Override

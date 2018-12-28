@@ -9,6 +9,8 @@
 
 package commandservice;
 
+import java.util.ArrayList;
+
 import devdas.Configuration;
 
 public class HelloWorldOutput extends DevdasCore
@@ -62,7 +64,8 @@ public class HelloWorldOutput extends DevdasCore
 	public void initializeAgentReactions()
 	{
 		agentInterests.add("Announcement");
-		agentReactions.put("Announcement", new Say());
+		Say s = new Say();
+		agentReactions.put("Announcement", new ArrayList<AgentReaction>(){{add(s);}});
 	}
 
 	/**
