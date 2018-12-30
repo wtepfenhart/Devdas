@@ -38,7 +38,7 @@ public class DevdasCoreTester extends DevdasCore
 	}
 
 	public void test(AgentMessage msg) {
-		String s = ((ArrayList<String>) msg.getParam("Say")).get(0);
+		String s = msg.getParam("Say")[0];
 		System.out.println(s);
 	}
 

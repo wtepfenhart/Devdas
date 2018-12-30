@@ -31,6 +31,7 @@ public class IntentionTester extends DevdasCore
 	@Override
 	public void agentActivity()
 	{
+		//Mimics an agent creating its interests
 		if(notDone)
 		{
 			AgentMessage a = new AgentMessage();
@@ -42,11 +43,13 @@ public class IntentionTester extends DevdasCore
 			notDone = false;
 		}
 		
+		//Mimics another agent sending RawTextCommands
 		System.out.print("Enter string to send: ");
 		String msg = scanner.nextLine();
 		AgentMessage b = new AgentMessage();
 		b.addParam("Text", msg);
 		b.setTopic("ContextFreeText");
+		b.setInterest(b.getSource()); //Ensures only one InterestInterpreter is executing at a time; the message is being directed to itself
 		sendAgentMessage(b.getRoute(), b);
 	}
 	

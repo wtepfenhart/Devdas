@@ -9,7 +9,6 @@
 package commandservice;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -52,8 +51,6 @@ public class AgentMessage {
     	this.read(j);
     }
     
-    
-    @SuppressWarnings("serial")
 	public AgentMessage(AgentMessage command)
     {
     	id = (UUID.randomUUID()).toString();
@@ -63,8 +60,6 @@ public class AgentMessage {
 	    interest = command.interest;
 		parms.put("ReplyTo", new ArrayList<String>(){{add(command.id);}});
     }
-    
-  
 
 	/**
      * Reads a JSONObject for each expected key-value mapping. If the value is
@@ -143,9 +138,9 @@ public class AgentMessage {
     	this.addParam(false, key, value);
     }
     
-    public ArrayList<String> getParam(String key)
+    public String[] getParam(String key)
     {
-    	return this.parms.get(key);
+    	return this.parms.get(key).toArray(new String[parms.get(key).size()]);
     }
     
     /**
@@ -225,16 +220,13 @@ public class AgentMessage {
 		return source;
 	}
 	
-	//TODO Replace immediately
 	/**
-	 *Returns all known parameters
+	 *Returns an array of all known keys in the parameter mapping of an AgentMessage
 	 *
-	 * @deprecated Unsafe, as it allows access to the Map; must be changed
-	 * @return
+	 * @return An array containing all keys known by this AgentMessage
 	 */
-	@Deprecated
-	public Map<String, ArrayList<String>> getAllParams()
+	public String[] getAllParams()
 	{
-		return parms;
+		return parms.keySet().toArray(new String[parms.keySet().size()]);
 	}
 }

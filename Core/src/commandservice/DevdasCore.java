@@ -374,7 +374,7 @@ public abstract class DevdasCore
 	 * Returns a call to the AgentReactions assigned to the given topic
 	 * 
 	 * @param topic The String that refers to a subset of AgentReactions
-	 * @return The AgentReactions assigned to the topic
+	 * @return An array of the AgentReactions assigned to the topic
 	 */
 	public AgentReaction[] getAgentReactions(String topic)
 	{

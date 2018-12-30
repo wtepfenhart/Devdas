@@ -123,12 +123,22 @@ public class InterestInterpreter implements AgentReaction
 	
 	public void execute(AgentMessage cmd)
 	{
-		System.err.println("Received RawTextCommand " + cmd);
+		System.err.println("Received Command " + cmd);
 		
 		if(cmd.getTopic().equals("ContextFreeText"))
 		{
-			System.err.println("\tTEXT: " + cmd.getParam("Text").get(0));
-			System.err.println("\tMATCHES: " + this.isInterested(cmd.getParam("Text").get(0))); //TODO Send a message to proper recipient
+			System.err.println("Command is identified as a RawTextCommand");
+			
+			//TODO We need a standardized format for commands that do not specify a destination; either null or a blank String
+			if(cmd.getInterest().equals(this.keyToInterest) || (cmd.getInterest().equals(null) || cmd.getInterest().equals("") || cmd.getInterest().equals("All")) ) 
+			{
+				System.err.println("RawTextCommand is being processed...");
+
+				System.err.println("\tTEXT: " + cmd.getParam("Text")[0]);
+				System.err.println("\tMATCHES: " + this.isInterested(cmd.getParam("Text")[0]));
+				
+				//TODO Send a message to proper recipient
+			}
 		}
 	}
 	

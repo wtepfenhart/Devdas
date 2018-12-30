@@ -44,27 +44,26 @@ public class TextToIntention extends DevdasCore
 				System.err.println("Received InterestCommand " + cmd);
 				//System.out.println(cmd.getParam("Interests"));
 				
-				addKeyToInterests(cmd.getSource(), new InterestInterpreter(cmd.getSource(), cmd.getParam("Interests")));
+				InterestInterpreter i = new InterestInterpreter(cmd.getSource(), cmd.getParam("Interests"));
+				addKeyToInterests(cmd.getSource(), i);
 				
 				announce();
 				
 				//Testing KeyToInterests methods
-/*				
- * 				announce();
- *				
- *				InterestInterpreter dummy = new InterestInterpreter("DUMMY", "BLANK");
- *				modifyKeyToInterests(cmd.getSource(), dummy);
- *				
- *				announce();
- *				
- *				InterestInterpreter dummy2 = new InterestInterpreter("NEW_DUMMY", "BLANK");
- *				addKeyToInterests("NEW_DUMMY", dummy2);
- *				
- *				announce();
- *				
- *				removeKeyToInterests(cmd.getSource(), dummy);
- *				
- *				announce();
+/*
+				InterestInterpreter dummy = new InterestInterpreter("DUMMY", "BLANK");
+				System.err.println(modifyKeyToInterests(i, dummy));
+				
+				announce();
+				
+				InterestInterpreter dummy2 = new InterestInterpreter("NEW_DUMMY", "BLANK");
+				System.err.println(addKeyToInterests("NEW_DUMMY", dummy2));
+				
+				announce();
+				
+				System.err.println(removeKeyToInterests(dummy));
+				
+				announce();
  */
 			}
 		}
@@ -98,42 +97,37 @@ public class TextToIntention extends DevdasCore
 		System.out.println(keyToInterests);
 	}
 	
-	public void addKeyToInterests(String agent, InterestInterpreter keyToInterest)
+	public boolean addKeyToInterests(String agent, InterestInterpreter keyToInterest)
 	{
-		if(!this.keyToInterests.contains(keyToInterest))
+		if(this.keyToInterests.contains(keyToInterest)) //Checks to see if there is an InterestInterpreter already assigned to the agent
 		{
-			keyToInterests.add(keyToInterest);
-			agentReactions.put("ContextFreeText", keyToInterests);
+			return this.keyToInterests.add(keyToInterest);
 		}
 		else
 		{
-			this.agentReactions.get("ContextFreeText").add(keyToInterest);
-		}
-	}
-/*	
-	public void removeKeyToInterests(String agent, InterestInterpreter...keyToInterests)
-	{
-		for(InterestInterpreter key : keyToInterests)
-		{
-			if (this.keyToInterests.contains(agent))
-			{
-				if(this.keyToInterests.size() > 1)
-				{
-					this.keyToInterests.removeAll(c)(agent, key);
-					agentReactions.remove("ContextFreeText", key);
-				}
-			}
+			boolean isModified = this.keyToInterests.add(keyToInterest);
+			this.agentReactions.put("ContextFreeText", keyToInterests);
+			
+			return isModified;
 		}
 	}
 	
-	@Deprecated
-	public void modifyKeyToInterests(String target, InterestInterpreter...newKey)
+	//TODO Hard to implement unless you have access to old key; override equals() method?
+	public boolean removeKeyToInterests(InterestInterpreter keyToInterest)
 	{
-		for(InterestInterpreter key : newKey)
+		return this.keyToInterests.remove(keyToInterest);
+	}
+	
+	//TODO Hard to implement unless you have access to old key; override equals() method?
+	public boolean modifyKeyToInterests(InterestInterpreter oldKey, InterestInterpreter newKey)
+	{
+		if(keyToInterests.contains(oldKey)) //Prevents IndexOutOfBoundsException on .set()
 		{
-			this.keyToInterests.replace(target, keyToInterests.get(target), (ArrayList<String>) key.getKeywords());
-			agentReactions.replace("ContextFreeText", agentReactions.get(target), key);
+			this.keyToInterests.set(keyToInterests.indexOf(oldKey), newKey);
+			return true;
 		}
+		
+		return false;
 	}
 
 	/**
