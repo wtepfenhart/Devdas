@@ -1,8 +1,12 @@
 package textToIntention;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Set;
+
 import commandservice.AgentMessage;
 import commandservice.AgentReaction;
 
@@ -14,7 +18,7 @@ import commandservice.AgentReaction;
 public class InterestInterpreter implements AgentReaction
 {
 	private String keyToInterest;
-	private ArrayList<String> keywords = new ArrayList<>();
+	private Set<String> keywords = new HashSet<>();
 	
 	public InterestInterpreter(String keyToInterest, String... keywords)
 	{
@@ -65,48 +69,38 @@ public class InterestInterpreter implements AgentReaction
 		return count;
 	}
 	
-	public void addKeyword(String... interest)
+	public boolean addKeyword(Collection<? extends String> interest)
 	{
-		for(String word: interest)
-		{
-			if(!this.keywords.contains(word)) //Avoids duplicates
-			{
-				this.keywords.add(word);
-			}
-			else
-			{
-				//Should we log an error here?
-			}
-		}
+		return this.keywords.addAll(interest);
 	}
 	
-	public void addKeyword(Collection<? extends String> interest)
+	public boolean addKeyword(String... interest)
 	{
-		addKeyword(interest.toArray(new String[interest.size()]));
+		return this.addKeyword(Arrays.asList(interest));
 	}
 	
-	public void removeKeyword(String interest)
+	public boolean removeKeyword(String interest)
 	{
 		if(keywords.size() > 1) //Should never remove all keywords; must have at least one keyword
 		{
-			keywords.remove(interest);
+			return keywords.remove(interest);
 		}
 		else //Has one or less keywords (less if the array was never set)
 		{
+			return false;
 			//Should we log an error here?
 		}
 	}
 	
-	public void modifyKeyword(String target, String newInterest)
+	public boolean modifyKeyword(String target, String newInterest)
 	{
 		if(!keywords.contains(target)) //Avoids modifying something that does not exist
 		{
-			this.addKeyword(target);
+			return this.addKeyword(target);
 		}
 		else
 		{
-			keywords.add(keywords.indexOf(target), newInterest);
-			keywords.remove(target);
+			return keywords.remove(target) && keywords.add(newInterest);
 		}
 	}
 	
@@ -119,6 +113,23 @@ public class InterestInterpreter implements AgentReaction
 	public String toString()
 	{
 		return "{" + keyToInterest + ":" + keywords.toString() + "}";
+	}
+	
+	@Override
+	public boolean equals(Object o)
+	{
+		if(o instanceof InterestInterpreter)
+		{
+			InterestInterpreter i = (InterestInterpreter) o;
+			return i.keyToInterest.equals(this.keyToInterest) && this.keywords.containsAll(i.keywords);
+		}
+		else
+			return false;
+	}
+	
+	public String getKeyToInterest()
+	{
+		return keyToInterest;
 	}
 	
 	public void execute(AgentMessage cmd)

@@ -8,7 +8,7 @@ import commandservice.DevdasCore;
 import devdas.Configuration;
 
 /**
- * Testing class for {@link TextToIntention} functionality. Used to mimic the behavior of a potential Agent.
+ * Testing class for {@link TextToIntention} functionality. Used to mimic the dialogue between the TextToIntention Agent and a potential Agent.
  * 
  * @author B-T-Johnson
  */
@@ -67,7 +67,14 @@ public class IntentionTester extends DevdasCore
 			
 			if(response.equals("-1"))
 			{
-				break;
+				if(keywords.size() == 0)
+				{
+					System.err.println("You must enter at least one keyword");
+				}
+				else
+				{	
+					break;
+				}
 			}
 			else
 			{

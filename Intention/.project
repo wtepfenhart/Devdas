@@ -14,11 +14,4 @@
 	<natures>
 		<nature>org.eclipse.jdt.core.javanature</nature>
 	</natures>
-	<linkedResources>
-		<link>
-			<name>commandservice</name>
-			<type>2</type>
-			<location>C:/Users/Kurt/git/Devdas/Core/src/commandservice</location>
-		</link>
-	</linkedResources>
 </projectDescription>

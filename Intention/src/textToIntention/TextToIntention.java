@@ -1,14 +1,13 @@
 package textToIntention;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import commandservice.AgentMessage;
 import commandservice.AgentReaction;
 import commandservice.DevdasCore;
 import devdas.Configuration; 
 
 /**
- * A {@code TextToIntention} Agent serves to interpret raw, context-free text into commands that will be sent out to other Agents.
+ * A {@code TextToIntention} Agent serves to interpret raw, context-free text into commands to be sent out to other Agents.
  * The text will be interpreted by a specific set of keys, where these keys each have their own set of keywords.
  * A keyword will be matched via the {@code isInterested(String)} method of an {@link InterestInterpreter}.
  * 
@@ -45,35 +44,44 @@ public class TextToIntention extends DevdasCore
 				//System.out.println(cmd.getParam("Interests"));
 				
 				InterestInterpreter i = new InterestInterpreter(cmd.getSource(), cmd.getParam("Interests"));
-				addKeyToInterests(cmd.getSource(), i);
+				System.err.println(addKeyToInterests(cmd.getSource(), i));
 				
 				announce();
 				
 				//Testing KeyToInterests methods
 /*
-				InterestInterpreter dummy = new InterestInterpreter("DUMMY", "BLANK");
-				System.err.println(modifyKeyToInterests(i, dummy));
+				InterestInterpreter dummy = new InterestInterpreter("DUMMY", "BLANK1");
+				System.err.println("=== TEST 1: MODIFY ===");
+				System.err.println("TRUE = " + modifyKeyToInterests(cmd.getSource(), dummy));
+				System.err.println("FALSE = " + modifyKeyToInterests("NOT AN AGENT", dummy));
 				
 				announce();
 				
-				InterestInterpreter dummy2 = new InterestInterpreter("NEW_DUMMY", "BLANK");
-				System.err.println(addKeyToInterests("NEW_DUMMY", dummy2));
+				InterestInterpreter dummy2 = new InterestInterpreter("NEW_DUMMY", "BLANK2", "BLANK3");
+				System.err.println("=== TEST 2: ADD ===");
+				System.err.println("TRUE = " + addKeyToInterests("NEW_DUMMY", dummy2));
+				System.err.println("TRUE = " + addKeyToInterests("NEW_DUMMY", dummy));
+				System.err.println("FALSE = " + addKeyToInterests("NEW_DUMMY", dummy2));
 				
 				announce();
 				
-				System.err.println(removeKeyToInterests(dummy));
+				System.err.println("=== TEST 3: REMOVE ===");
+				System.err.println("TRUE = " + removeKeyToInterests("DUMMY"));
+				System.err.println("FALSE = " + removeKeyToInterests("DUMMY"));
 				
 				announce();
- */
+  */
 			}
 		}
 	}
 	
+	@SuppressWarnings("serial")
 	public void initializeAgentReactions()
 	{
 		agentInterests.add("Announcement");
 		agentInterests.add("ContextFreeText");
 		
+		agentReactions.put("ContextFreeText", new ArrayList<AgentReaction>());
 		agentReactions.put("Announcement", new ArrayList<AgentReaction>(){{add(new Initializer());}});
 	}
 	
@@ -97,37 +105,83 @@ public class TextToIntention extends DevdasCore
 		System.out.println(keyToInterests);
 	}
 	
+	/**
+	 * Appends an InterestInterpreter to the end of the list of known interests for the specified agent. 
+	 * 
+	 * @param agent Desired agent key within the agent mapping
+	 * @param keyToInterest InterestInterpreter that shall be added to the agent
+	 * @return true if the mapping of interests and agents changed as a result of the call
+	 */
 	public boolean addKeyToInterests(String agent, InterestInterpreter keyToInterest)
 	{
-		if(this.keyToInterests.contains(keyToInterest)) //Checks to see if there is an InterestInterpreter already assigned to the agent
+		boolean result = false;
+		if(this.keyToInterests.contains(keyToInterest))
 		{
-			return this.keyToInterests.add(keyToInterest);
+			InterestInterpreter[] keys = this.getKeyToInterests();
+			
+			for(int i = 0; i < keys.length; i++)
+			{
+				InterestInterpreter key = keys[i];
+				
+				if(key.getKeyToInterest().equals(agent))
+				{
+					return result = ((InterestInterpreter) keyToInterests.get(i)).addKeyword(keyToInterest.getKeywords());
+				}
+			}
 		}
 		else
 		{
-			boolean isModified = this.keyToInterests.add(keyToInterest);
+			result = this.keyToInterests.add(keyToInterest);
 			this.agentReactions.put("ContextFreeText", keyToInterests);
-			
-			return isModified;
 		}
+		
+		return result;
 	}
 	
-	//TODO Hard to implement unless you have access to old key; override equals() method?
-	public boolean removeKeyToInterests(InterestInterpreter keyToInterest)
+	/**
+	 * Removes the first InterestInterpreter associated to the specified agent from the agent mapping, if it is present. If the mapping does not contain the agent, it is unchanged.
+	 * 
+	 * @param agent Desired agent key within the agent mapping
+	 * @return true if the mapping of interests and agents changed as a result of the call
+	 */
+	public boolean removeKeyToInterests(String agent)
 	{
-		return this.keyToInterests.remove(keyToInterest);
-	}
-	
-	//TODO Hard to implement unless you have access to old key; override equals() method?
-	public boolean modifyKeyToInterests(InterestInterpreter oldKey, InterestInterpreter newKey)
-	{
-		if(keyToInterests.contains(oldKey)) //Prevents IndexOutOfBoundsException on .set()
+		for(InterestInterpreter i : this.getKeyToInterests())
 		{
-			this.keyToInterests.set(keyToInterests.indexOf(oldKey), newKey);
-			return true;
+			if(i.getKeyToInterest().equals(agent))
+			{
+				return keyToInterests.remove(i);
+			}
 		}
 		
 		return false;
+	}
+	
+	/**
+	 * Replaces the first InterestInterpreter associated with the specified agent in the agent mapping with the specified InterestInterpreter.
+	 * 
+	 * @param target Desired agent key within the agent mapping
+	 * @param newKey InterestInterpreter to be stored in the mapping 
+	 * @return true if the mapping of interests and agents changed as a result of the call
+	 */
+	public boolean modifyKeyToInterests(String target, InterestInterpreter newKey)
+	{
+		InterestInterpreter[] keys = this.getKeyToInterests();
+		
+		for(int i = 0; i < keys.length; i++)
+		{
+			if(keys[i].getKeyToInterest().equals(target))
+			{
+				return this.keyToInterests.set(i, newKey) != null;
+			}
+		}
+		
+		return false;
+	}
+	
+	public InterestInterpreter[] getKeyToInterests()
+	{
+		return keyToInterests.toArray(new InterestInterpreter[keyToInterests.size()]);
 	}
 
 	/**
