@@ -164,8 +164,8 @@ public class InterestInterpreter implements AgentReaction
 		{
 			System.err.println("Command is identified as a RawTextCommand");
 			
-			//TODO We need a standardized format for commands that do not specify a destination; either null or a blank String, not both
-			if(cmd.getSource().equals(this.keyToInterest) || cmd.getInterest().equals("All")) 
+			//TODO We need a standardized format for commands that do not specify a field in advance; either null or a blank String, not both
+			if(cmd.getSource().equals(this.keyToInterest) || (cmd.getInterest() == null || cmd.getInterest().equals("All"))) 
 			{
 				System.err.println("RawTextCommand is being processed...");
 
