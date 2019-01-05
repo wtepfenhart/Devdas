@@ -52,9 +52,10 @@ public class HelloWorldOutput extends DevdasCore
 
 		/**
 		 * Simple print line to a console
+		 * @return 
 		 */
 		public void execute(AgentMessage cmd) {
-			System.out.println(cmd.getParam("Subject"));
+			System.out.println(cmd.getParamList("Subject"));
 		}
 	}
 

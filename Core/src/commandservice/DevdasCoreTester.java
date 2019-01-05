@@ -2,6 +2,7 @@ package commandservice;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import devdas.Configuration;
 
@@ -31,15 +32,18 @@ public class DevdasCoreTester extends DevdasCore
 		agentInterests.add("All");
 		agentInterests.add("Command");
 		
-		HashMap<String, ArrayList<AgentReaction>> result = new HashMap<String, ArrayList<AgentReaction>>();
+		Map<String, ArrayList<? extends AgentReaction>> result = new HashMap<String, ArrayList<? extends AgentReaction>>();
 		TestService test = new TestService(this);
 		result.put("Say", new ArrayList<AgentReaction>(){{add(test);}});
 		agentReactions = result;
 	}
 
-	public void test(AgentMessage msg) {
-		String s = msg.getParam("Say")[0];
-		System.out.println(s);
+	public void test(AgentMessage msg)
+	{
+		for(String s : msg.getParamList("Say"))
+		{
+			System.out.println(s);
+		}
 	}
 
 	@Override

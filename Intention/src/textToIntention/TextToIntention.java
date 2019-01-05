@@ -15,7 +15,7 @@ import devdas.Configuration;
  */
 public class TextToIntention extends DevdasCore
 {
-	private ArrayList<AgentReaction> keyToInterests = new ArrayList<AgentReaction>();
+	private ArrayList<InterestInterpreter> keyToInterests = new ArrayList<InterestInterpreter>();
 	
 	public TextToIntention(Configuration config)
 	{
@@ -38,12 +38,13 @@ public class TextToIntention extends DevdasCore
 		 */
 		public void execute(AgentMessage cmd)
 		{	
+			System.err.println("Received AgentCommand " + cmd);
+			
 			if(cmd.getTopic().equals("Announcement") && cmd.getInterest().equals("Interests") && (cmd.getDestination().isEmpty() || cmd.getDestination() == null))
 			{
-				System.err.println("Received InterestCommand " + cmd);
-				//System.out.println(cmd.getParam("Interests"));
+				System.err.println("Command is identified as an InterestCommand");
 				
-				InterestInterpreter i = new InterestInterpreter(cmd.getSource(), cmd.getParam("Interests"));
+				InterestInterpreter i = new InterestInterpreter(cmd.getSource(), cmd.getParamList("Interests"));
 				System.err.println(addKeyToInterests(cmd.getSource(), i));
 				
 				announce();
@@ -60,6 +61,9 @@ public class TextToIntention extends DevdasCore
 				InterestInterpreter dummy2 = new InterestInterpreter("NEW_DUMMY", "BLANK2", "BLANK3");
 				System.err.println("=== TEST 2: ADD ===");
 				System.err.println("TRUE = " + addKeyToInterests("NEW_DUMMY", dummy2));
+				
+				announce();
+				
 				System.err.println("TRUE = " + addKeyToInterests("NEW_DUMMY", dummy));
 				System.err.println("FALSE = " + addKeyToInterests("NEW_DUMMY", dummy2));
 				
@@ -70,7 +74,7 @@ public class TextToIntention extends DevdasCore
 				System.err.println("FALSE = " + removeKeyToInterests("DUMMY"));
 				
 				announce();
-  */
+ */
 			}
 		}
 	}
@@ -99,7 +103,7 @@ public class TextToIntention extends DevdasCore
 		}
 	}
 	
-	public void announce() //TODO May need to move up to Core as systemCommand method
+	public void announce() //TODO May need to move up into Core as systemCommand method
 	{
 		System.out.println(agentReactions);
 		System.out.println(keyToInterests);
@@ -120,12 +124,10 @@ public class TextToIntention extends DevdasCore
 			InterestInterpreter[] keys = this.getKeyToInterests();
 			
 			for(int i = 0; i < keys.length; i++)
-			{
-				InterestInterpreter key = keys[i];
-				
-				if(key.getKeyToInterest().equals(agent))
+			{	
+				if(keys[i].getKeyToInterest().equals(agent))
 				{
-					return result = ((InterestInterpreter) keyToInterests.get(i)).addKeyword(keyToInterest.getKeywords());
+					result = ((InterestInterpreter) keyToInterests.get(i)).addKeyword(keyToInterest.getKeywords());
 				}
 			}
 		}
@@ -158,7 +160,7 @@ public class TextToIntention extends DevdasCore
 	}
 	
 	/**
-	 * Replaces the first InterestInterpreter associated with the specified agent in the agent mapping with the specified InterestInterpreter.
+	 * Replaces the first InterestInterpreter associated with the specified agent in the agent mapping with the specified element.
 	 * 
 	 * @param target Desired agent key within the agent mapping
 	 * @param newKey InterestInterpreter to be stored in the mapping 
@@ -167,7 +169,7 @@ public class TextToIntention extends DevdasCore
 	public boolean modifyKeyToInterests(String target, InterestInterpreter newKey)
 	{
 		InterestInterpreter[] keys = this.getKeyToInterests();
-		
+
 		for(int i = 0; i < keys.length; i++)
 		{
 			if(keys[i].getKeyToInterest().equals(target))
@@ -175,7 +177,7 @@ public class TextToIntention extends DevdasCore
 				return this.keyToInterests.set(i, newKey) != null;
 			}
 		}
-		
+			
 		return false;
 	}
 	

@@ -1,7 +1,9 @@
 package textToIntention;
 
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Arrays;
 
 import commandservice.AgentMessage;
 import commandservice.DevdasCore;
@@ -18,10 +20,15 @@ public class IntentionTester extends DevdasCore
 	private boolean notDone = true;
 	private String[] keywords;
 	
-	public IntentionTester(Configuration config, String... keywords)
+	public IntentionTester(Configuration config, Collection<? extends String> keywords)
 	{
 		super(config);
-		this.keywords = keywords;
+		this.keywords = keywords.toArray(new String[keywords.size()]);
+	}
+	
+	public IntentionTester(Configuration config, String... keywords)
+	{
+		this(config, Arrays.asList(keywords));
 	}
 
 	@Override
@@ -49,18 +56,17 @@ public class IntentionTester extends DevdasCore
 		AgentMessage b = new AgentMessage();
 		b.addParam("Text", msg);
 		b.setTopic("ContextFreeText");
-		b.setInterest(b.getSource()); //Ensures only one InterestInterpreter is executing at a time; the message is being directed to itself
 		sendAgentMessage(b.getRoute(), b);
 	}
 	
 	public static void main(String[] args)
 	{
 		Configuration config = new Configuration(args);
-		ArrayList<String> keywords = new ArrayList<String>();
+		HashSet<String> keywords = new HashSet<String>();
 		
 		System.out.println("===== YOU ARE ALLOWED A MAXIMUM OF 10 KEYWORDS =====");
 		
-		for(int i = 0; i < 10; i++)
+		while(keywords.size() < 10)
 		{
 			System.out.print("Enter a keyword to target (-1 to stop): ");
 			String response = scanner.nextLine();
@@ -76,6 +82,10 @@ public class IntentionTester extends DevdasCore
 					break;
 				}
 			}
+			else if(response.equals("") || response == null)
+			{
+				System.err.println("Sorry, didn't get that");
+			}
 			else
 			{
 				keywords.add(response);
@@ -83,7 +93,7 @@ public class IntentionTester extends DevdasCore
 		}
 		System.out.println("====================================================");
 		
-		IntentionTester tester = new IntentionTester(config, keywords.toArray(new String[keywords.size()]));
+		IntentionTester tester = new IntentionTester(config, keywords);
 		tester.run();
 	}
 }

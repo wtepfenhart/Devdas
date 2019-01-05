@@ -20,65 +20,81 @@ public class InterestInterpreter implements AgentReaction
 	private String keyToInterest;
 	private Set<String> keywords = new HashSet<>();
 	
-	public InterestInterpreter(String keyToInterest, String... keywords)
-	{
-		this.keyToInterest = keyToInterest;
-		
-		for(String key : keywords)
-		{
-			this.keywords.add(key);
-		}
-	}
-	
 	public InterestInterpreter(String keyToInterest, Collection<? extends String> keywords)
 	{
 		this.keyToInterest = keyToInterest;
 		
-		for(String key : keywords)
-		{
-			this.keywords.add(key);
-		}
+		this.keywords.addAll(keywords);
+	}
+	
+	public InterestInterpreter(String keyToInterest, String... keywords)
+	{
+		this(keyToInterest, Arrays.asList(keywords));
 	}
 	
 	/**
-	 * Checks to see if a String of raw text contains any matches to the keywords known by the Agent
+	 * Checks to see if a String of raw text contains any matches to the set of keywords known by the Agent.
 	 * 
-	 * @param contextFreeText A String containing uninterpreted text
+	 * @param contextFreeText String phrase whose presence in the set of keywords is to be tested
 	 * @return Returns the number of matches to the keywords in the String
 	 */
 	public int isInterested(String contextFreeText)
 	{
-		int count = 0;
+		//int wordCount = 0;
+		//int searchCount = 0;
+		int matchCount = 0;
 		
 		if(contextFreeText != null)
 			for(String word : contextFreeText.split(" "))
 			{
+				//wordCount++;
+				
 				for(String key : keywords)
 				{
+					//searchCount++;
+					
 					if(key == null)
 					{
-						System.err.println("NULL");//ERROR; keys should never be null
+						System.err.println("NULL"); //ERROR; keys should never be null
 					}
 					else if(word.toLowerCase().contains(key.toLowerCase()))
 					{
-						count++;
+						matchCount++;
 					}
 				}
 			}
 		
-		return count;
+		return matchCount;
 	}
 	
+	/**
+	 * Adds all of the keywords in the specified collection to the set of known keywords if they are not already present.
+	 * 
+	 * @param interest Collection containing keywords to be added to the set of known keywords
+	 * @return true if the set of keywords changed as a result of the call
+	 */
 	public boolean addKeyword(Collection<? extends String> interest)
 	{
 		return this.keywords.addAll(interest);
 	}
 	
+	/**
+	 * Adds all of the keywords in the array to the set of known keywords if they are not already present.
+	 * 
+	 * @param interest Array containing keywords to be added to the set of known keywords
+	 * @return true if the set of keywords changed as a result of the call
+	 */
 	public boolean addKeyword(String... interest)
 	{
 		return this.addKeyword(Arrays.asList(interest));
 	}
 	
+	/**
+	 * Removes the specified keyword from the set of known keywords if it is present.
+	 * 
+	 * @param interest Keyword to be removed from the set of keywords, if present
+	 * @return true if the set of keywords contained the specified element
+	 */
 	public boolean removeKeyword(String interest)
 	{
 		if(keywords.size() > 1) //Should never remove all keywords; must have at least one keyword
@@ -92,6 +108,14 @@ public class InterestInterpreter implements AgentReaction
 		}
 	}
 	
+	/**
+	 * Replaces the specified keyword within the set of known keywords with a new keyword, if present. If the specified keyword is not within the set,
+	 * the specified keyword is added to the set instead.
+	 * 
+	 * @param target element whose presence in the set of keywords is to be tested
+	 * @param newInterest Keywords to be added to the set of known keywords
+	 * @return true if the set of keywords changed as a result of the call
+	 */
 	public boolean modifyKeyword(String target, String newInterest)
 	{
 		if(!keywords.contains(target)) //Avoids modifying something that does not exist
@@ -104,9 +128,9 @@ public class InterestInterpreter implements AgentReaction
 		}
 	}
 	
-	public Collection<? extends String> getKeywords()
+	public String[] getKeywords()
 	{
-		return keywords;
+		return keywords.toArray(new String[keywords.size()]);
 	}
 	
 	@Override
@@ -121,7 +145,7 @@ public class InterestInterpreter implements AgentReaction
 		if(o instanceof InterestInterpreter)
 		{
 			InterestInterpreter i = (InterestInterpreter) o;
-			return i.keyToInterest.equals(this.keyToInterest) && this.keywords.containsAll(i.keywords);
+			return this.keyToInterest.equals(i.keyToInterest) && this.keywords.containsAll(i.keywords);
 		}
 		else
 			return false;
@@ -134,19 +158,22 @@ public class InterestInterpreter implements AgentReaction
 	
 	public void execute(AgentMessage cmd)
 	{
-		System.err.println("Received Command " + cmd);
+		System.err.println("Received AgentCommand " + cmd);
 		
 		if(cmd.getTopic().equals("ContextFreeText"))
 		{
 			System.err.println("Command is identified as a RawTextCommand");
 			
-			//TODO We need a standardized format for commands that do not specify a destination; either null or a blank String
-			if(cmd.getInterest().equals(this.keyToInterest) || (cmd.getInterest().equals(null) || cmd.getInterest().equals("") || cmd.getInterest().equals("All")) ) 
+			//TODO We need a standardized format for commands that do not specify a destination; either null or a blank String, not both
+			if(cmd.getSource().equals(this.keyToInterest) || cmd.getInterest().equals("All")) 
 			{
 				System.err.println("RawTextCommand is being processed...");
 
-				System.err.println("\tTEXT: " + cmd.getParam("Text")[0]);
-				System.err.println("\tMATCHES: " + this.isInterested(cmd.getParam("Text")[0]));
+				for(String phrase : cmd.getParamList("Text"))
+				{
+					System.err.println("\tTEXT: " + phrase);
+					System.err.println("\tMATCHES: " + this.isInterested(phrase));
+				}
 				
 				//TODO Send a message to proper recipient
 			}

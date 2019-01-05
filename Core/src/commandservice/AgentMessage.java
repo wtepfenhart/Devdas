@@ -51,6 +51,7 @@ public class AgentMessage {
     	this.read(j);
     }
     
+	@SuppressWarnings("serial")
 	public AgentMessage(AgentMessage command)
     {
     	id = (UUID.randomUUID()).toString();
@@ -138,9 +139,14 @@ public class AgentMessage {
     	this.addParam(false, key, value);
     }
     
-    public String[] getParam(String key)
+    public String[] getParamList(String key)
     {
     	return this.parms.get(key).toArray(new String[parms.get(key).size()]);
+    }
+    
+    public String getParam(String key, int index)
+    {
+    	return this.parms.get(key).get(index);
     }
     
     /**
@@ -221,12 +227,12 @@ public class AgentMessage {
 	}
 	
 	/**
-	 *Returns an array of all known keys in the parameter mapping of an AgentMessage
+	 *Returns an array of all known values in the parameter mapping of an AgentMessage
 	 *
-	 * @return An array containing all keys known by this AgentMessage
+	 * @return An array containing all values known by this AgentMessage
 	 */
 	public String[] getAllParams()
 	{
-		return parms.keySet().toArray(new String[parms.keySet().size()]);
+		return parms.values().toArray(new String[parms.values().size()]);
 	}
 }

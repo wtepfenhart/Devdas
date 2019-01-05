@@ -43,7 +43,7 @@ public abstract class DevdasCore
 	protected ArrayList<String> agentInterests;
 
 	private Map<String, CommandProcessor> systemCommands;
-	protected Map<String, ArrayList<AgentReaction>> agentReactions; 
+	protected Map<String, ArrayList<? extends AgentReaction>> agentReactions; 
 
 	private String logLevel;
 
@@ -87,7 +87,7 @@ public abstract class DevdasCore
 		recieveCommandMessages(configuration.getSystemExchange(),systemRoutes);
 		
 		// setup agent command functionality
-		agentReactions = new HashMap<String, ArrayList<AgentReaction>>();
+		agentReactions = new HashMap<String, ArrayList<? extends AgentReaction>>();
 		agentInterests = new ArrayList<String>();
 		
 		initializeAgentReactions();
@@ -234,7 +234,7 @@ public abstract class DevdasCore
 		String cmd = msg.getTopic();
 		if (cmd != null && !cmd.isEmpty())
 		{
-			ArrayList<AgentReaction> s = agentReactions.get(cmd); //get the command processor for he command
+			ArrayList<? extends AgentReaction> s = agentReactions.get(cmd); //get the command processor for he command
 			if (s!=null)
 			{
 				for(AgentReaction e: s)
@@ -371,9 +371,9 @@ public abstract class DevdasCore
 
 	
 	/**
-	 * Returns a call to the AgentReactions assigned to the given topic
+	 * Returns an array of the AgentReactions assigned to the given topic
 	 * 
-	 * @param topic The String that refers to a subset of AgentReactions
+	 * @param topic Key that refers to a subset of AgentReactions
 	 * @return An array of the AgentReactions assigned to the topic
 	 */
 	public AgentReaction[] getAgentReactions(String topic)
