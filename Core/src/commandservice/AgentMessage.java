@@ -101,7 +101,7 @@ public class AgentMessage {
 	public String toJSONString()
     {
         JSONObject j = new JSONObject();
-        j.put("id", id);
+        j.put("messageID", id);
         j.put("source", source);
         j.put("topic", topic);
         j.put("interest", interest);
@@ -224,6 +224,11 @@ public class AgentMessage {
 	public String getSource()
 	{
 		return source;
+	}
+	
+	public String getID()
+	{
+		return this.id;
 	}
 	
 	/**

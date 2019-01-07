@@ -1,6 +1,7 @@
 package textToIntention;
 
 import java.util.ArrayList;
+
 import commandservice.AgentMessage;
 import commandservice.AgentReaction;
 import commandservice.DevdasCore;
@@ -16,10 +17,12 @@ import devdas.Configuration;
 public class TextToIntention extends DevdasCore
 {
 	private ArrayList<InterestInterpreter> keyToInterests = new ArrayList<InterestInterpreter>();
+	private TextToIntention self;
 	
 	public TextToIntention(Configuration config)
 	{
 		super(config);
+		self = this; //Is this safe?
 	}
 	
 	/**
@@ -44,7 +47,7 @@ public class TextToIntention extends DevdasCore
 			{
 				System.err.println("Command is identified as an InterestCommand");
 				
-				InterestInterpreter i = new InterestInterpreter(cmd.getSource(), cmd.getParamList("Interests"));
+				InterestInterpreter i = new InterestInterpreter(self, cmd.getSource(), cmd.getParamList("Interests"));
 				System.err.println(addKeyToInterests(cmd.getSource(), i));
 				
 				announce();
@@ -79,19 +82,51 @@ public class TextToIntention extends DevdasCore
 		}
 	}
 	
+	private class BestMatch implements AgentReaction
+	{
+		private ArrayList<AgentMessage> matchQueue = new ArrayList<AgentMessage>();
+		
+		public BestMatch()
+		{}
+		
+		public void execute(AgentMessage command)
+		{
+			matchQueue.add(command);
+			
+			if(matchQueue.size() == keyToInterests.size())
+			{
+				AgentMessage max = matchQueue.get(0);
+				
+				for(int i = 1; i < matchQueue.size(); i++)
+				{
+					if(Double.valueOf(matchQueue.get(i).getParam("Match", 0)) > Double.valueOf(max.getParam("Match", 0)))
+					{
+						max = matchQueue.get(i);
+					}
+				}
+				
+				max.setTopic("Match"); //There's got to be a better name...
+				
+				sendAgentMessage(max.getInterest(), max);
+				matchQueue.clear();
+			}
+		}
+	}
+	
 	@SuppressWarnings("serial")
 	public void initializeAgentReactions()
 	{
 		agentInterests.add("Announcement");
 		agentInterests.add("ContextFreeText");
+		agentInterests.add("InterestInterpreter");
 		
 		agentReactions.put("ContextFreeText", new ArrayList<AgentReaction>());
 		agentReactions.put("Announcement", new ArrayList<AgentReaction>(){{add(new Initializer());}});
+		agentReactions.put("InterestInterpreter", new ArrayList<AgentReaction>(){{add(new BestMatch());}});
 	}
 	
 	public void agentActivity()
 	{
-		//TODO Send context as replyTo
 		try
 		{
 			Thread.sleep(10);
@@ -119,6 +154,7 @@ public class TextToIntention extends DevdasCore
 	public boolean addKeyToInterests(String agent, InterestInterpreter keyToInterest)
 	{
 		boolean result = false;
+		
 		if(this.keyToInterests.contains(keyToInterest))
 		{
 			InterestInterpreter[] keys = this.getKeyToInterests();

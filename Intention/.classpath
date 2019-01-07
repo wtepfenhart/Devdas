@@ -3,5 +3,9 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/Core"/>
+	<classpathentry kind="lib" path="C:/Users/Kurt/git/Devdas/Core/lib/amqp-client-4.0.2.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Kurt/git/Devdas/Core/lib/json-simple-1.1.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Kurt/git/Devdas/Core/lib/slf4j-api-1.7.21.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Kurt/git/Devdas/Core/lib/slf4j-simple-1.7.22.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

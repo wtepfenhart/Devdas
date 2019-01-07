@@ -3,9 +3,11 @@ package textToIntention;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Scanner;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import commandservice.AgentMessage;
+import commandservice.AgentReaction;
 import commandservice.DevdasCore;
 import devdas.Configuration;
 
@@ -30,10 +32,25 @@ public class IntentionTester extends DevdasCore
 	{
 		this(config, Arrays.asList(keywords));
 	}
+	
+	private class Responder implements AgentReaction
+	{
+		public Responder()
+		{}
+		
+		public void execute(AgentMessage command)
+		{
+			System.err.printf("Received response: %.2f%% MATCH%n", Double.parseDouble(command.getParam("Match", 0)));
+		}
+	}
 
-	@Override
+	@SuppressWarnings("serial")
 	public void initializeAgentReactions()
-	{}
+	{
+		this.agentInterests.add("Match");
+		
+		this.agentReactions.put("Match", new ArrayList<AgentReaction>(){{add(new Responder());}});
+	}
 
 	@Override
 	public void agentActivity()
@@ -64,7 +81,7 @@ public class IntentionTester extends DevdasCore
 		Configuration config = new Configuration(args);
 		HashSet<String> keywords = new HashSet<String>();
 		
-		System.out.println("===== YOU ARE ALLOWED A MAXIMUM OF 10 KEYWORDS =====");
+		System.out.println("===== YOU ARE ALLOWED A MAXIMUM OF 10 UNIQUE KEYWORDS =====");
 		
 		while(keywords.size() < 10)
 		{

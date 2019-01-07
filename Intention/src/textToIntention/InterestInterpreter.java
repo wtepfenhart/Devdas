@@ -9,6 +9,8 @@ import java.util.Set;
 
 import commandservice.AgentMessage;
 import commandservice.AgentReaction;
+import commandservice.DevdasCore;
+import devdas.Configuration;
 
 /**
  * An {@code InterestInterpreter} searches an input of raw text (non-contextual) for any possible interest that matches the keywords assigned to the interest in question.
@@ -18,40 +20,44 @@ import commandservice.AgentReaction;
 public class InterestInterpreter implements AgentReaction
 {
 	private String keyToInterest;
+	private AgentMessage response;
 	private Set<String> keywords = new HashSet<>();
+	private DevdasCore host;
 	
-	public InterestInterpreter(String keyToInterest, Collection<? extends String> keywords)
+	public InterestInterpreter(DevdasCore host, String keyToInterest, Collection<? extends String> keywords)
 	{
 		this.keyToInterest = keyToInterest;
 		
 		this.keywords.addAll(keywords);
+		
+		this.host = host;
 	}
 	
-	public InterestInterpreter(String keyToInterest, String... keywords)
+	public InterestInterpreter(DevdasCore host, String keyToInterest, String... keywords)
 	{
-		this(keyToInterest, Arrays.asList(keywords));
+		this(host, keyToInterest, Arrays.asList(keywords));
 	}
 	
 	/**
 	 * Checks to see if a String of raw text contains any matches to the set of keywords known by the Agent.
 	 * 
 	 * @param contextFreeText String phrase whose presence in the set of keywords is to be tested
-	 * @return Returns the number of matches to the keywords in the String
+	 * @return Returns the number of matches to the keywords in the String as a percentage (out of 100)
 	 */
-	public int isInterested(String contextFreeText)
+	public double isInterested(String contextFreeText)
 	{
-		//int wordCount = 0;
-		//int searchCount = 0;
+		int wordCount = 0;
+		int searchCount = 0;
 		int matchCount = 0;
 		
 		if(contextFreeText != null)
 			for(String word : contextFreeText.split(" "))
 			{
-				//wordCount++;
+				wordCount++;
 				
 				for(String key : keywords)
 				{
-					//searchCount++;
+					searchCount++;
 					
 					if(key == null)
 					{
@@ -64,7 +70,7 @@ public class InterestInterpreter implements AgentReaction
 				}
 			}
 		
-		return matchCount;
+		return (((double) matchCount / searchCount) / wordCount) * 100;
 	}
 	
 	/**
@@ -169,15 +175,31 @@ public class InterestInterpreter implements AgentReaction
 			{
 				System.err.println("RawTextCommand is being processed...");
 
+				double count = 0;
+				
 				for(String phrase : cmd.getParamList("Text"))
 				{
 					System.err.println("\tTEXT: " + phrase);
+					count += this.isInterested(phrase);
 					System.err.println("\tMATCHES: " + this.isInterested(phrase));
 				}
 				
 				//TODO Send a message to proper recipient
+				setResponse(cmd, count);
+				System.err.println("Set CommandResponse " + this.response + " to Route " + this.response.getRoute());
+				host.sendAgentMessage(this.host.getHostID(), this.response);
 			}
 		}
+	}
+	
+	public void setResponse(AgentMessage cmd, double count)
+	{
+		AgentMessage msg = new AgentMessage(cmd);
+		msg.setTopic("InterestInterpreter");
+		msg.setInterest(this.keyToInterest);
+		msg.addParam("Match", Double.toString(count));
+		
+		this.response = msg;
 	}
 	
 	/**
@@ -211,7 +233,7 @@ public class InterestInterpreter implements AgentReaction
 			
 		System.out.println("========================================");
 		
-		InterestInterpreter interpreter = new InterestInterpreter("Test", keywords);
+		InterestInterpreter interpreter = new InterestInterpreter(new TextToIntention(new Configuration(args)),"Test", keywords);
 		
 		System.out.println(interpreter);
 		
@@ -224,7 +246,7 @@ public class InterestInterpreter implements AgentReaction
 			
 			if(!phraseResponse.equals("-1"))
 			{
-				System.out.println(interpreter.isInterested(phraseResponse) == 1 ? "There is 1 match" : "There are " + interpreter.isInterested(phraseResponse) + " matches");
+				System.out.printf("There is a %.2f%% match.%n", interpreter.isInterested(phraseResponse));
 					System.out.println("----------------------------------------");
 			}
 			else
