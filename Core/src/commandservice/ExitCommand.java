@@ -11,7 +11,7 @@ package commandservice;
  */
 public class ExitCommand implements CommandProcessor
 {
-	DevdasCore app;
+	private static DevdasCore app;
 	
 	public ExitCommand(DevdasCore program)
 	{

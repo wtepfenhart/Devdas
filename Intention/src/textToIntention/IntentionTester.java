@@ -41,6 +41,24 @@ public class IntentionTester extends DevdasCore
 		public void execute(AgentMessage command)
 		{
 			System.err.printf("Received response: %.2f%% MATCH%n", Double.parseDouble(command.getParam("Match", 0)));
+			
+			System.err.print("Matched keyword(s): ");
+			
+			String[] list = command.getParamList("Keyword");
+			
+			for(int i = 0; i < list.length; i++)
+			{
+				System.err.print(list[i]);
+				
+				if (i == list.length -1)
+				{
+					System.err.println();
+				}
+				else
+				{
+					System.err.print(", ");
+				}
+			}
 		}
 	}
 

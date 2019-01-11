@@ -2,7 +2,7 @@ package commandservice;
 
 public class ReportCommand implements CommandProcessor
 {
-	private DevdasCore app;
+	private static DevdasCore app;
 
 	public ReportCommand(DevdasCore program)
 	{

@@ -8,7 +8,7 @@ package commandservice;
  */
 public class ResumeCommand implements CommandProcessor
 {
-	private DevdasCore app;
+	private static DevdasCore app;
 
 	public ResumeCommand(DevdasCore program)
 	{

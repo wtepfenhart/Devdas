@@ -20,9 +20,9 @@ import devdas.Configuration;
 public class InterestInterpreter implements AgentReaction
 {
 	private String keyToInterest;
-	private AgentMessage response;
 	private Set<String> keywords = new HashSet<>();
-	private DevdasCore host;
+	private Set<String> matchedKeywords = new HashSet<>();
+	private static DevdasCore host;
 	
 	public InterestInterpreter(DevdasCore host, String keyToInterest, Collection<? extends String> keywords)
 	{
@@ -30,7 +30,7 @@ public class InterestInterpreter implements AgentReaction
 		
 		this.keywords.addAll(keywords);
 		
-		this.host = host;
+		InterestInterpreter.host = host;
 	}
 	
 	public InterestInterpreter(DevdasCore host, String keyToInterest, String... keywords)
@@ -44,7 +44,7 @@ public class InterestInterpreter implements AgentReaction
 	 * @param contextFreeText String phrase whose presence in the set of keywords is to be tested
 	 * @return Returns the number of matches to the keywords in the String as a percentage (out of 100)
 	 */
-	public double isInterested(String contextFreeText)
+	private double isInterested(String contextFreeText)
 	{
 		int wordCount = 0;
 		int searchCount = 0;
@@ -66,6 +66,7 @@ public class InterestInterpreter implements AgentReaction
 					else if(word.toLowerCase().contains(key.toLowerCase()))
 					{
 						matchCount++;
+						matchedKeywords.add(key);
 					}
 				}
 			}
@@ -163,7 +164,7 @@ public class InterestInterpreter implements AgentReaction
 	}
 	
 	public void execute(AgentMessage cmd)
-	{
+	{	
 		System.err.println("Received AgentCommand " + cmd);
 		
 		if(cmd.getTopic().equals("ContextFreeText"))
@@ -180,26 +181,29 @@ public class InterestInterpreter implements AgentReaction
 				for(String phrase : cmd.getParamList("Text"))
 				{
 					System.err.println("\tTEXT: " + phrase);
-					count += this.isInterested(phrase);
-					System.err.println("\tMATCHES: " + this.isInterested(phrase));
+					double interest = this.isInterested(phrase);
+					count += interest;
+					System.err.println("\tMATCHES: " + interest);
 				}
 				
 				//TODO Send a message to proper recipient
-				setResponse(cmd, count);
-				System.err.println("Set CommandResponse " + this.response + " to Route " + this.response.getRoute());
-				host.sendAgentMessage(this.host.getHostID(), this.response);
+				AgentMessage response = setResponse(cmd, count);
+				System.err.println("Set CommandResponse " + response + " to Route " + response.getRoute());
+				host.sendAgentMessage(host.getHostID(), response);
+				matchedKeywords.clear();
 			}
 		}
 	}
 	
-	public void setResponse(AgentMessage cmd, double count)
+	private AgentMessage setResponse(AgentMessage cmd, double count)
 	{
 		AgentMessage msg = new AgentMessage(cmd);
 		msg.setTopic("InterestInterpreter");
 		msg.setInterest(this.keyToInterest);
 		msg.addParam("Match", Double.toString(count));
+		msg.addParam("Keyword", matchedKeywords.toArray(new String[matchedKeywords.size()]));
 		
-		this.response = msg;
+		return msg;
 	}
 	
 	/**

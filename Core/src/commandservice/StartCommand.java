@@ -2,7 +2,7 @@ package commandservice;
 
 public class StartCommand implements CommandProcessor
 {
-	private DevdasCore app;
+	private static DevdasCore app;
 
 	public StartCommand(DevdasCore program)
 	{

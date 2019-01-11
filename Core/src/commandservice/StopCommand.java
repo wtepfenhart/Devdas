@@ -8,7 +8,7 @@ package commandservice;
  */
 public class StopCommand implements CommandProcessor
 {
-	private DevdasCore app;
+	private static DevdasCore app;
 
 	public StopCommand(DevdasCore program)
 	{

@@ -8,7 +8,7 @@ package commandservice;
  */
 public class StatusCommand implements CommandProcessor
 {	
-	DevdasCore app;
+	private static DevdasCore app;
 	
 	public StatusCommand(DevdasCore program)
 	{

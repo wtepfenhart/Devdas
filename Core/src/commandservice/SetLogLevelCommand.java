@@ -8,7 +8,7 @@ package commandservice;
  */
 public class SetLogLevelCommand implements CommandProcessor
 {	
-	private DevdasCore app;
+	private static DevdasCore app;
 
 	public SetLogLevelCommand(DevdasCore program)
 	{

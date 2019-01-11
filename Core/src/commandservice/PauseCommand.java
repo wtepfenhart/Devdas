@@ -8,7 +8,7 @@ package commandservice;
  */
 public class PauseCommand implements CommandProcessor
 {	
-	DevdasCore app;
+	private static DevdasCore app;
 	
 	public PauseCommand(DevdasCore program)
 	{

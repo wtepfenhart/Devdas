@@ -17,12 +17,10 @@ import devdas.Configuration;
 public class TextToIntention extends DevdasCore
 {
 	private ArrayList<InterestInterpreter> keyToInterests = new ArrayList<InterestInterpreter>();
-	private TextToIntention self;
 	
 	public TextToIntention(Configuration config)
 	{
 		super(config);
-		self = this; //Is this safe?
 	}
 	
 	/**
@@ -47,7 +45,7 @@ public class TextToIntention extends DevdasCore
 			{
 				System.err.println("Command is identified as an InterestCommand");
 				
-				InterestInterpreter i = new InterestInterpreter(self, cmd.getSource(), cmd.getParamList("Interests"));
+				InterestInterpreter i = new InterestInterpreter(TextToIntention.this, cmd.getSource(), cmd.getParamList("Interests"));
 				System.err.println(addKeyToInterests(cmd.getSource(), i));
 				
 				announce();
@@ -95,19 +93,29 @@ public class TextToIntention extends DevdasCore
 			
 			if(matchQueue.size() == keyToInterests.size())
 			{
-				AgentMessage max = matchQueue.get(0);
+				ArrayList<AgentMessage> max = new ArrayList<>();
+				max.add(matchQueue.get(0));
 				
 				for(int i = 1; i < matchQueue.size(); i++)
 				{
-					if(Double.valueOf(matchQueue.get(i).getParam("Match", 0)) > Double.valueOf(max.getParam("Match", 0)))
+					if(Double.valueOf(matchQueue.get(i).getParam("Match", 0)) > Double.valueOf(max.get(0).getParam("Match", 0)))
 					{
-						max = matchQueue.get(i);
+						max.clear();
+						max.add(matchQueue.get(i));
+					}
+					else if(Double.valueOf(matchQueue.get(i).getParam("Match", 0)) + 0.0001 > Double.valueOf(max.get(0).getParam("Match", 0))) //Approximately equal; is '0.0001' a good epsilon value? 
+					{
+						max.add(matchQueue.get(i));
 					}
 				}
 				
-				max.setTopic("Match"); //There's got to be a better name...
+				for(AgentMessage msg : max)
+				{
+					msg.setTopic("Match"); //There's got to be a better topic name...
+					
+					sendAgentMessage(msg.getInterest(), msg);
+				}
 				
-				sendAgentMessage(max.getInterest(), max);
 				matchQueue.clear();
 			}
 		}
