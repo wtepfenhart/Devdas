@@ -50,7 +50,7 @@ public class InterestInterpreter implements AgentReaction
 		int searchCount = 0;
 		int matchCount = 0;
 		
-		if(contextFreeText != null)
+		if(contextFreeText != null) //No sense in checking an empty reference
 			for(String word : contextFreeText.split(" "))
 			{
 				wordCount++;
@@ -71,7 +71,16 @@ public class InterestInterpreter implements AgentReaction
 				}
 			}
 		
-		return (((double) matchCount / searchCount) / wordCount) * 100;
+		return (((double) matchCount / searchCount) / wordCount) * 100; //Is this a fair percentage? It penalizes more generalized agents and favors more specific agents (i.e., InterestInterpreters with more words receive lower percentages than InterestInterpreters with less words)
+			/*
+			 * ALTERNATIVES:
+			 *  - Remove searchCount; agents are not penalized if they are more general (i.e., have more keywords)
+			 *  	ISSUE: Potential for agents to generate match percentages more than 100% (e.g., an agent with keywords "Apple" and "Pineapple" will generate 200% on the phrase "Pineapple")
+			 *  - Remove wordCount; the length of the phrase does not have as much of a penalty on the match percentage
+			 *  	ISSUE: Puts more emphasis on the number of keywords assigned to an agent (emphasis on more matches versus less keywords); produces a greater difference in match percentages between agents
+			 *  - Remove both searchCount and wordCount; only concerned with the existence of a keyword (simpler)
+			 *  	ISSUE: Cannot differentiate between agents with different numbers of keywords
+			 */
 	}
 	
 	/**
@@ -102,17 +111,23 @@ public class InterestInterpreter implements AgentReaction
 	 * @param interest Keyword to be removed from the set of keywords, if present
 	 * @return true if the set of keywords contained the specified element
 	 */
-	public boolean removeKeyword(String interest)
+	public boolean removeKeyword(String... interest)
 	{
-		if(keywords.size() > 1) //Should never remove all keywords; must have at least one keyword
-		{
-			return keywords.remove(interest);
+		boolean result = false;
+		
+		for(String i : interest)
+		{	
+			if(keywords.size() > 1) //Should never remove all keywords; must have at least one keyword
+			{
+				result = keywords.remove(i);
+			}
+			else //Has one or less keywords (less if the array was never set)
+			{
+				//Should we log an error here?
+			}
 		}
-		else //Has one or less keywords (less if the array was never set)
-		{
-			return false;
-			//Should we log an error here?
-		}
+		
+		return result;
 	}
 	
 	/**
@@ -163,38 +178,67 @@ public class InterestInterpreter implements AgentReaction
 		return keyToInterest;
 	}
 	
+	/**
+	 * Checks to see if this InterestInterpreter contains all of the elements in the specified collection.
+	 * 
+	 * @param keywords Collection of keywords to be checked for containment in this InterestInterpreter
+	 * @return true if this InterestInterpreter contains all of the elements in the specified collection
+	 */
+	public boolean contains(Collection<? extends String> keywords)
+	{
+		return keywords.containsAll(keywords);
+	}
+	
+	/**
+	 * Checks to see if this InterestInterpreter contains all of the Strings in the specified array of keywords.
+	 * 
+	 * @param keywords Array of keywords to be checked for containment in this InterestInterpreter
+	 * @return true if this InterestInterpreter contains all of the keywords in the specified array
+	 */
+	public boolean contains(String... keywords)
+	{
+		return contains(Arrays.asList(keywords));
+	}
+	
 	public void execute(AgentMessage cmd)
 	{	
-		System.err.println("Received AgentCommand " + cmd);
+		//System.err.println("Received AgentCommand " + cmd);
 		
 		if(cmd.getTopic().equals("ContextFreeText"))
 		{
-			System.err.println("Command is identified as a RawTextCommand");
+			//System.err.println("Command is identified as a RawTextCommand");
 			
 			//TODO We need a standardized format for commands that do not specify a field in advance; either null or a blank String, not both
 			if(cmd.getSource().equals(this.keyToInterest) || (cmd.getInterest() == null || cmd.getInterest().equals("All"))) 
 			{
-				System.err.println("RawTextCommand is being processed...");
+				//System.err.println("RawTextCommand is being processed...");
 
 				double count = 0;
 				
 				for(String phrase : cmd.getParamList("Text"))
 				{
-					System.err.println("\tTEXT: " + phrase);
+					//System.err.println("\tTEXT: " + phrase);
 					double interest = this.isInterested(phrase);
 					count += interest;
-					System.err.println("\tMATCHES: " + interest);
+					//System.err.println("\tMATCHES: " + interest);
 				}
 				
 				//TODO Send a message to proper recipient
 				AgentMessage response = setResponse(cmd, count);
-				System.err.println("Set CommandResponse " + response + " to Route " + response.getRoute());
+				//System.err.println("Set CommandResponse " + response + " to Route " + response.getRoute());
 				host.sendAgentMessage(host.getHostID(), response);
 				matchedKeywords.clear();
 			}
 		}
 	}
 	
+	/**
+	 * Prepares an AgentMessage in response to the host TextToIntention Agent
+	 * 
+	 * @param cmd Original message
+	 * @param count Total match percentage
+	 * @return A new AgentMessage that is ready to be sent
+	 */
 	private AgentMessage setResponse(AgentMessage cmd, double count)
 	{
 		AgentMessage msg = new AgentMessage(cmd);

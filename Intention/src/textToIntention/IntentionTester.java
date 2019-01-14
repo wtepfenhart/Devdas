@@ -33,6 +33,9 @@ public class IntentionTester extends DevdasCore
 		this(config, Arrays.asList(keywords));
 	}
 	
+	/**
+	 * Basic response to any {@link AgentMessage} sent by {@link TextToIntention} 
+	 */
 	private class Responder implements AgentReaction
 	{
 		public Responder()
@@ -85,7 +88,7 @@ public class IntentionTester extends DevdasCore
 			notDone = false;
 		}
 		
-		//Mimics another agent sending RawTextCommands
+		//Mimics another, possibly separate agent sending RawTextCommands
 		System.out.print("Enter string to send: ");
 		String msg = scanner.nextLine();
 		AgentMessage b = new AgentMessage();

@@ -234,7 +234,7 @@ public abstract class DevdasCore
 		String cmd = msg.getTopic();
 		if (cmd != null && !cmd.isEmpty())
 		{
-			ArrayList<? extends AgentReaction> s = agentReactions.get(cmd); //get the command processor for he command
+			ArrayList<? extends AgentReaction> s = agentReactions.get(cmd); //get the command processor for the command
 			if (s!=null)
 			{
 				for(AgentReaction e: s)
@@ -366,7 +366,7 @@ public abstract class DevdasCore
 	 */
 	public String getAgentInterestsList()
 	{
-		return agentInterests.toArray().toString();
+		return agentInterests.toString();
 	}
 
 	
