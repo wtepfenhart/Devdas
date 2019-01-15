@@ -17,7 +17,8 @@ import devdas.Configuration;
 public class TextToIntention extends DevdasCore
 {
 	private ArrayList<InterestInterpreter> keyToInterests = new ArrayList<InterestInterpreter>();
-	private static final double EPSILON = 1; //Is this *too* precise? Equivalent to a 1% difference
+	private static final double EPSILON = 10; //Is this *too* broad? Equivalent to a 10% difference
+											  //Should this value be a constant or a function of text-length?
 	
 	public TextToIntention(Configuration config)
 	{
@@ -85,7 +86,7 @@ public class TextToIntention extends DevdasCore
 	
 	/**
 	 * Identifies which {@link InterestInterpreter} has the highest match percentage (according to the {@link InterestInterpreter#isInterested(String)} method in the {@link InterestInterpreter} class) and sends an {@link AgentMessage} to its associated Agent.
-	 * If the match percentages between two or more InterestInterpreters are within {@value #EPSILON} of the highest percentage, this inner class will send messages to all the Agents 
+	 * If the match percentages between two or more InterestInterpreters are within {@value #EPSILON} percent of the highest percentage, this inner class will send messages to all the Agents 
 	 * associated to each InterestInterpreter that are within this criteria.
 	 */
 	private class BestMatch implements AgentReaction
@@ -102,25 +103,32 @@ public class TextToIntention extends DevdasCore
 			//Only once all InterestInterpreters have sent a command can we determine the highest match percentage
 			if(matchQueue.size() == keyToInterests.size())
 			{
-				ArrayList<AgentMessage> max = new ArrayList<>();
-				max.add(matchQueue.get(0));
+				AgentMessage highest = matchQueue.get(0);
+				ArrayList<AgentMessage> maximum = new ArrayList<>();
 				
-				//Determine which InterestInterpreter has the highest match percentage (within a certain proximity)
+				//Determine which InterestInterpreter has the highest match percentage
 				for(int i = 1; i < matchQueue.size(); i++)
 				{
-					if(Double.valueOf(matchQueue.get(i).getParam("Match", 0)) > Double.valueOf(max.get(0).getParam("Match", 0)))
+					if(Double.valueOf(matchQueue.get(i).getParam("Match", 0)) > Double.valueOf(highest.getParam("Match", 0)))
 					{
-						max.clear();
-						max.add(matchQueue.get(i));
+						highest = matchQueue.get(i);
 					}
-					else if(Double.valueOf(matchQueue.get(i).getParam("Match", 0)) + EPSILON > Double.valueOf(max.get(0).getParam("Match", 0))) //Approximately equal
+				}
+				
+				maximum.add(highest);
+				matchQueue.remove(highest);
+				
+				//Determine which (if any) InterestInterpreters are within proximity to the highest match percentage
+				for(int i = 0; i < matchQueue.size(); i++)
+				{
+					if(Math.abs( Double.valueOf(matchQueue.get(i).getParam("Match", 0)) - Double.valueOf(highest.getParam("Match", 0)) ) <= EPSILON) //Approximately equal
 					{
-						max.add(matchQueue.get(i));
+						maximum.add(matchQueue.get(i));
 					}
 				}
 				
 				//Send a message to the Agents which are in the queue
-				for(AgentMessage msg : max)
+				for(AgentMessage msg : maximum)
 				{
 					msg.setTopic("Match"); //TODO There's got to be a better topic name...
 					

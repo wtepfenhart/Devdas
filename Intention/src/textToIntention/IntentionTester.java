@@ -42,8 +42,8 @@ public class IntentionTester extends DevdasCore
 		{}
 		
 		public void execute(AgentMessage command)
-		{
-			System.err.printf("Received response: %.2f%% MATCH%n", Double.parseDouble(command.getParam("Match", 0)));
+		{	
+			System.err.printf("\nReceived response: %.2f%% MATCH%n", Double.parseDouble(command.getParam("Match", 0)));
 			
 			System.err.print("Matched keyword(s): ");
 			
@@ -132,6 +132,9 @@ public class IntentionTester extends DevdasCore
 		System.out.println("====================================================");
 		
 		IntentionTester tester = new IntentionTester(config, keywords);
+		
+		System.err.println(tester.getHostID());
+		
 		tester.run();
 	}
 }

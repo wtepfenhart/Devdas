@@ -141,7 +141,14 @@ public class AgentMessage {
     
     public String[] getParamList(String key)
     {
-    	return this.parms.get(key).toArray(new String[parms.get(key).size()]);
+    	try
+    	{
+    		return this.parms.get(key).toArray(new String[parms.get(key).size()]);
+    	}
+    	catch(NullPointerException e)
+    	{
+    		return null;
+    	}
     }
     
     public String getParam(String key, int index)

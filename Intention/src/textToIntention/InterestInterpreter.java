@@ -46,15 +46,14 @@ public class InterestInterpreter implements AgentReaction
 	 */
 	private double isInterested(String contextFreeText)
 	{
-		int wordCount = 0;
 		int searchCount = 0;
 		int matchCount = 0;
+		double result = 0;
 		
-		if(contextFreeText != null) //No sense in checking an empty reference
+		if(contextFreeText != null && contextFreeText.length() != 0) //No sense in checking an empty reference
+		{
 			for(String word : contextFreeText.split(" "))
-			{
-				wordCount++;
-				
+			{	
 				for(String key : keywords)
 				{
 					searchCount++;
@@ -69,18 +68,16 @@ public class InterestInterpreter implements AgentReaction
 						matchedKeywords.add(key);
 					}
 				}
+				
+				result += ((double) matchCount / searchCount);
+				searchCount = 0;
+				matchCount = 0;
 			}
 		
-		return (((double) matchCount / searchCount) / wordCount) * 100; //Is this a fair percentage? It penalizes more generalized agents and favors more specific agents (i.e., InterestInterpreters with more words receive lower percentages than InterestInterpreters with less words)
-			/*
-			 * ALTERNATIVES:
-			 *  - Remove searchCount; agents are not penalized if they are more general (i.e., have more keywords)
-			 *  	ISSUE: Potential for agents to generate match percentages more than 100% (e.g., an agent with keywords "Apple" and "Pineapple" will generate 200% on the phrase "Pineapple")
-			 *  - Remove wordCount; the length of the phrase does not have as much of a penalty on the match percentage
-			 *  	ISSUE: Puts more emphasis on the number of keywords assigned to an agent (emphasis on more matches versus less keywords); produces a greater difference in match percentages between agents
-			 *  - Remove both searchCount and wordCount; only concerned with the existence of a keyword (simpler)
-			 *  	ISSUE: Cannot differentiate between agents with different numbers of keywords
-			 */
+			return result * 100;
+		}
+		
+		return 0;
 	}
 	
 	/**
@@ -117,13 +114,13 @@ public class InterestInterpreter implements AgentReaction
 		
 		for(String i : interest)
 		{	
-			if(keywords.size() > 1) //Should never remove all keywords; must have at least one keyword
+			if(keywords.size() > 1) //Should never remove all keywords (defeats the purpose of having an InterestInterpreter); must have at least one keyword
 			{
 				result = keywords.remove(i);
 			}
 			else //Has one or less keywords (less if the array was never set)
 			{
-				//Should we log an error here?
+				//Should we log an error here? Or should we just destroy the InterestInterpreter at this point (since it is an empty field at this point)?
 			}
 		}
 		
@@ -164,13 +161,17 @@ public class InterestInterpreter implements AgentReaction
 	@Override
 	public boolean equals(Object o)
 	{
-		if(o instanceof InterestInterpreter)
+		if (o == null)
+		{
+			return false;
+		}
+		else if (o instanceof InterestInterpreter)
 		{
 			InterestInterpreter i = (InterestInterpreter) o;
-			return this.keyToInterest.equals(i.keyToInterest) && this.keywords.containsAll(i.keywords);
+			return this.keyToInterest.equals(i.keyToInterest) && this.keywords.containsAll(i.keywords); //Not symmetric 
 		}
-		else
-			return false;
+		
+		return false;
 	}
 	
 	public String getKeyToInterest()
@@ -212,22 +213,21 @@ public class InterestInterpreter implements AgentReaction
 			if(cmd.getSource().equals(this.keyToInterest) || (cmd.getInterest() == null || cmd.getInterest().equals("All"))) 
 			{
 				//System.err.println("RawTextCommand is being processed...");
-
-				double count = 0;
 				
+				System.err.println("AGENT: " + this.keyToInterest);
 				for(String phrase : cmd.getParamList("Text"))
 				{
-					//System.err.println("\tTEXT: " + phrase);
+					System.err.println("\tTEXT: " + phrase);
 					double interest = this.isInterested(phrase);
-					count += interest;
-					//System.err.println("\tMATCHES: " + interest);
+					System.err.println("\tMATCHES: " + interest);
+					
+					AgentMessage response = setResponse(cmd, interest);
+					//System.err.println("Set CommandResponse " + response + " to Route " + response.getRoute());
+					host.sendAgentMessage(host.getHostID(), response);
+					matchedKeywords.clear();
 				}
 				
-				//TODO Send a message to proper recipient
-				AgentMessage response = setResponse(cmd, count);
-				//System.err.println("Set CommandResponse " + response + " to Route " + response.getRoute());
-				host.sendAgentMessage(host.getHostID(), response);
-				matchedKeywords.clear();
+				
 			}
 		}
 	}
@@ -236,7 +236,7 @@ public class InterestInterpreter implements AgentReaction
 	 * Prepares an AgentMessage in response to the host TextToIntention Agent
 	 * 
 	 * @param cmd Original message
-	 * @param count Total match percentage
+	 * @param count Total match percentage (from {@link #isInterested(String)} method)
 	 * @return A new AgentMessage that is ready to be sent
 	 */
 	private AgentMessage setResponse(AgentMessage cmd, double count)
