@@ -22,7 +22,7 @@ import devdas.LogPublisher;
 
 /**
  * Generic program that processes commands received by a CommandServiceSubscriber and sends the results through a CommandServicePublisher.
- * The results of a command may be a simple display of a variable's value or another command itself.
+ * The results of a command may be a simple display of a variable's value or another command itself. 
  * 
  * @author B-T-Johnson
  */
@@ -316,6 +316,7 @@ public abstract class DevdasCore
 		if (cmd != null && !cmd.isEmpty())
 		{
 			CommandProcessor s = systemCommands.get(cmd); //get the command processor for the command
+			
 			if (s!=null)
 			{
 				s.execute(msg);  //use it
@@ -378,7 +379,14 @@ public abstract class DevdasCore
 	 */
 	public AgentReaction[] getAgentReactions(String topic)
 	{
-		return agentReactions.get(topic).toArray(new AgentReaction[agentReactions.get(topic).size()]);
+		try
+		{
+			return agentReactions.get(topic).toArray(new AgentReaction[agentReactions.get(topic).size()]);
+		}
+		catch(NullPointerException e)
+		{
+			return null;
+		}
 	}
 
 	/**

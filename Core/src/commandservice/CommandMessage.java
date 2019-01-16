@@ -117,17 +117,24 @@ public class CommandMessage
 ////////////////////////////*GETTERS*////////////////////////////
     public String getParam(String key)
     {
-    	return this.parms.get(key);
+    	try
+    	{
+    		return this.parms.get(key);
+    	}
+    	catch(NullPointerException e)
+    	{
+    		return null;
+    	}
     }
     
     public String getDestination()
 	{
-		return destination;
+		return destination == null ? "" : destination;
 	}
     
     public String getType()
     {
-    	return type;
+    	return type == null ? "" : type;
     }
     
     /**

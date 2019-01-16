@@ -18,7 +18,7 @@ public class TextToIntention extends DevdasCore
 {
 	private ArrayList<InterestInterpreter> keyToInterests = new ArrayList<InterestInterpreter>();
 	private static final double EPSILON = 10; //Is this *too* broad? Equivalent to a 10% difference
-											  //Should this value be a constant or a function of text-length?
+											  //Should this value be a constant or a function of text-length to negate the effect of long String-phrases?
 	
 	public TextToIntention(Configuration config)
 	{
@@ -43,12 +43,12 @@ public class TextToIntention extends DevdasCore
 		{	
 			//System.err.println("Received AgentCommand " + cmd);
 			
-			if(cmd.getTopic().equals("Announcement") && cmd.getInterest().equals("Interests") && (cmd.getDestination().isEmpty() || cmd.getDestination() == null))
+			if(cmd.getTopic().equals("Announcement") && cmd.getInterest().equals("Interests") && (cmd.getDestination().isEmpty()))
 			{
 				//System.err.println("Command is identified as an InterestCommand");
 				
 				InterestInterpreter i = new InterestInterpreter(TextToIntention.this, cmd.getSource(), cmd.getParamList("Interests"));
-				System.err.println(addKeyToInterests(cmd.getSource(), i));
+				System.err.println(addKeyToInterests(i));
 				
 				announce();
 				
@@ -63,23 +63,24 @@ public class TextToIntention extends DevdasCore
 				
 				InterestInterpreter dummy2 = new InterestInterpreter(TextToIntention.this, "NEW_DUMMY", "BLANK2", "BLANK3");
 				System.err.println("=== TEST 2: ADD ===");
-				System.err.println("TRUE = " + addKeyToInterests("NEW_DUMMY", dummy2));
+				System.err.println("TRUE = " + addKeyToInterests(dummy2));
 				
 				announce();
 				
-				System.err.println("TRUE = " + addKeyToInterests("NEW_DUMMY", dummy));
-				System.err.println("FALSE = " + addKeyToInterests("NEW_DUMMY", dummy2));
+				InterestInterpreter dummy3 = new InterestInterpreter(TextToIntention.this, "NEW_DUMMY", dummy.getKeywords());
+				System.err.println("TRUE = " + addKeyToInterests(dummy3));
+				System.err.println("FALSE = " + addKeyToInterests(dummy2));
 				
 				announce();
 				
 				System.err.println("=== TEST 3: REMOVE ===");
 				System.err.println("TRUE = " + removeKeyToInterests("DUMMY"));
-				System.err.println("TRUE = " + removeKeyToInterests("NEW_DUMMY", dummy));
-				System.err.println("FALSE = " + removeKeyToInterests("NEW_DUMMY", dummy)); //Already removed
+				System.err.println("TRUE = " + removeKeyToInterests(dummy3));
+				System.err.println("FALSE = " + removeKeyToInterests(dummy)); //Already removed
 				System.err.println("FALSE = " + removeKeyToInterests("DUMMY"));			   // " "
 				
 				announce();
- */ 
+ */
 			}
 		}
 	}
@@ -104,7 +105,7 @@ public class TextToIntention extends DevdasCore
 			if(matchQueue.size() == keyToInterests.size())
 			{
 				AgentMessage highest = matchQueue.get(0);
-				ArrayList<AgentMessage> maximum = new ArrayList<>();
+				ArrayList<AgentMessage> closest = new ArrayList<>();
 				
 				//Determine which InterestInterpreter has the highest match percentage
 				for(int i = 1; i < matchQueue.size(); i++)
@@ -115,7 +116,7 @@ public class TextToIntention extends DevdasCore
 					}
 				}
 				
-				maximum.add(highest);
+				closest.add(highest);
 				matchQueue.remove(highest);
 				
 				//Determine which (if any) InterestInterpreters are within proximity to the highest match percentage
@@ -123,12 +124,12 @@ public class TextToIntention extends DevdasCore
 				{
 					if(Math.abs( Double.valueOf(matchQueue.get(i).getParam("Match", 0)) - Double.valueOf(highest.getParam("Match", 0)) ) <= EPSILON) //Approximately equal
 					{
-						maximum.add(matchQueue.get(i));
+						closest.add(matchQueue.get(i));
 					}
 				}
 				
 				//Send a message to the Agents which are in the queue
-				for(AgentMessage msg : maximum)
+				for(AgentMessage msg : closest)
 				{
 					msg.setTopic("Match"); //TODO There's got to be a better topic name...
 					
@@ -173,29 +174,29 @@ public class TextToIntention extends DevdasCore
 	}
 	
 	/**
-	 * Appends an InterestInterpreter to the end of the list of known interests for the specified agent. 
+	 * Appends an InterestInterpreter to the end of the list of known interests. 
 	 * 
-	 * @param agent Desired agent key within the agent mapping
 	 * @param keyToInterest InterestInterpreter that shall be added to the agent
 	 * @return true if the mapping of interests and agents changed as a result of the call
 	 */
-	public boolean addKeyToInterests(String agent, InterestInterpreter keyToInterest)
+	public boolean addKeyToInterests(InterestInterpreter keyToInterest)
 	{
-		boolean result = false;
+		Boolean result = null;
 		
-		if(keyToInterests.contains(keyToInterest))
-		{
-			InterestInterpreter[] keys = this.getKeyToInterests();
+		if(keyToInterest == null)
+			return false;
+		
+		InterestInterpreter[] keys = this.getKeyToInterests();
 			
-			for(int i = 0; i < keys.length; i++)
-			{	
-				if(keys[i].getKeyToInterest().equals(agent))
-				{
-					result = ((InterestInterpreter) keyToInterests.get(i)).addKeyword(keyToInterest.getKeywords());
-				}
+		for(int i = 0; i < keys.length; i++)
+		{	
+			if(keys[i].getKeyToInterest().equals(keyToInterest.getKeyToInterest()))
+			{
+				result = ((InterestInterpreter) keyToInterests.get(i)).addKeyword(keyToInterest.getKeywords());
 			}
 		}
-		else
+		
+		if(result == null)
 		{
 			result = keyToInterests.add(keyToInterest);
 			this.agentReactions.put("ContextFreeText", keyToInterests);
@@ -205,22 +206,21 @@ public class TextToIntention extends DevdasCore
 	}
 	
 	/**
-	 * Removes keywords from the first InterestInterpreter (or the whole {@code Object} if all of the keywords from the desired InterestInterpreter are found within {@code keyToInterest} or if {@code keyToInterest} is {@code null}) that is associated to the specified agent from the agent mapping, if it is present. If the mapping does not contain the agent, it is unchanged.
+	 * Removes keywords from the first InterestInterpreter (or the whole {@code Object} if all of the keywords from the desired InterestInterpreter are found within {@code keyToInterest}) from the agent mapping, if it is present. If the mapping does not contain the InterestInterpreter, it is unchanged.
 	 * 
-	 * @param agent Desired agent key within the agent mapping
 	 * @param keyToInterest InterestInterpreter with an expected list of keywords to remove
 	 * @return true if the mapping of interests and agents changed as a result of the call
 	 */
-	public boolean removeKeyToInterests(String agent, InterestInterpreter keyToInterest)
+	public boolean removeKeyToInterests(InterestInterpreter keyToInterest)
 	{
 		boolean result = false;
 		InterestInterpreter[] keys = this.getKeyToInterests();
 		
-		for(int i = 0; i< keys.length; i++)
+		for(int i = 0; i < keys.length; i++)
 		{
-			if(keys[i].getKeyToInterest().equals(agent))
+			if(keys[i].getKeyToInterest().equals(keyToInterest.getKeyToInterest()))
 			{
-				result = keyToInterest == null || keyToInterest.equals(keyToInterests.get(i)) ? keyToInterests.remove(i) != null : keyToInterests.get(i).removeKeyword(keyToInterest.getKeywords());
+				result = keyToInterest.equals(keys[i]) ? keyToInterests.remove(i) != null : keyToInterests.get(i).removeKeyword(keyToInterest.getKeywords());
 			}
 		}
 		
@@ -235,7 +235,18 @@ public class TextToIntention extends DevdasCore
 	 */
 	public boolean removeKeyToInterests(String agent)
 	{
-		return removeKeyToInterests(agent, null);
+		boolean result = false;
+		InterestInterpreter[] keys = this.getKeyToInterests();
+		
+		for(int i = 0; i < keys.length; i++)
+		{
+			if(keys[i].getKeyToInterest().equals(agent))
+			{
+				result = keyToInterests.remove(i) != null;
+			}
+		}
+		
+		return result;
 	}
 	
 	/**

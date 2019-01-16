@@ -114,23 +114,29 @@ public class AgentMessage {
     @SuppressWarnings("serial")
 	public void addParam(boolean replace, String key, String... value)
     {
-    	for (String v: value)
-		{
-	    	if (parms.containsKey(key))
-	    	{
-	    		if (replace)
-	    		{
-	    			parms.get(key).clear();
-	    			parms.get(key).add(v);
-	    		}
-	    		else
-	    			parms.get(key).add(v);
-	    	}
-	    	else
-	    	{
-	    		parms.put(key, new ArrayList<String>(){{add(v);}});
-	    	}
-		}
+    	if(key != null) //Should never add null keys
+    	{
+    		for (String v: value)
+    		{
+    			if(v != null) //Should never add null values
+    			{
+    				if (parms.containsKey(key))
+    				{
+    					if (replace)
+    					{
+    						parms.get(key).clear();
+    						parms.get(key).add(v);
+    					}
+    					else
+    						parms.get(key).add(v);
+    				}
+    				else
+    				{
+    					parms.put(key, new ArrayList<String>(){{add(v);}});
+    				}
+    			}
+    		}
+    	}
     }
     
     //Assumes no replacement
@@ -153,7 +159,14 @@ public class AgentMessage {
     
     public String getParam(String key, int index)
     {
-    	return this.parms.get(key).get(index);
+    	try
+    	{
+    		return this.parms.get(key).get(index);
+    	}
+    	catch(NullPointerException e)
+    	{
+    		return null;
+    	}
     }
     
     /**
@@ -193,7 +206,7 @@ public class AgentMessage {
     }
 
 	public String getDestination() {
-		return destination;
+		return destination == null ? "" : destination;
 	}
 
 	public void setDestination(String destination) {
@@ -211,7 +224,7 @@ public class AgentMessage {
 	
 	public String getInterest()
 	{
-		return interest;
+		return interest == null ? "" : interest;
 	}
 
     public String getRoute() {
@@ -225,12 +238,12 @@ public class AgentMessage {
 
 	public String getTopic()
 	{
-		return topic;
+		return topic == null ? "" : topic;
 	}
 	
 	public String getSource()
 	{
-		return source;
+		return source == null ? "" : source;
 	}
 	
 	public String getID()
@@ -245,6 +258,13 @@ public class AgentMessage {
 	 */
 	public String[] getAllParams()
 	{
-		return parms.values().toArray(new String[parms.values().size()]);
+		try
+		{
+			return parms.values().toArray(new String[parms.values().size()]);
+		}
+		catch(NullPointerException e)
+		{
+			return null;
+		}
 	}
 }

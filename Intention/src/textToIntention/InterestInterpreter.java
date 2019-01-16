@@ -88,6 +88,9 @@ public class InterestInterpreter implements AgentReaction
 	 */
 	public boolean addKeyword(Collection<? extends String> interest)
 	{
+		if (interest.contains("") || interest.contains(null))
+			return false;
+		
 		return this.keywords.addAll(interest);
 	}
 	
@@ -139,17 +142,30 @@ public class InterestInterpreter implements AgentReaction
 	{
 		if(!keywords.contains(target)) //Avoids modifying something that does not exist
 		{
+			if(target == "" || target == null)
+				return false;
+			
 			return this.addKeyword(target);
 		}
 		else
 		{
+			if(newInterest == "" || newInterest == null)
+				return false;
+			
 			return keywords.remove(target) && keywords.add(newInterest);
 		}
 	}
 	
 	public String[] getKeywords()
 	{
-		return keywords.toArray(new String[keywords.size()]);
+		try
+		{
+			return keywords.toArray(new String[keywords.size()]);
+		}
+		catch(NullPointerException e)
+		{
+			return null;
+		}
 	}
 	
 	@Override
@@ -209,8 +225,7 @@ public class InterestInterpreter implements AgentReaction
 		{
 			//System.err.println("Command is identified as a RawTextCommand");
 			
-			//TODO We need a standardized format for commands that do not specify a field in advance; either null or a blank String, not both
-			if(cmd.getSource().equals(this.keyToInterest) || (cmd.getInterest() == null || cmd.getInterest().equals("All"))) 
+			if(cmd.getSource().equals(this.keyToInterest) || (cmd.getInterest().isEmpty() || cmd.getInterest().equals("All"))) 
 			{
 				//System.err.println("RawTextCommand is being processed...");
 				
@@ -225,9 +240,7 @@ public class InterestInterpreter implements AgentReaction
 					//System.err.println("Set CommandResponse " + response + " to Route " + response.getRoute());
 					host.sendAgentMessage(host.getHostID(), response);
 					matchedKeywords.clear();
-				}
-				
-				
+				}	
 			}
 		}
 	}
