@@ -28,7 +28,7 @@ public class InterestInterpreter implements AgentReaction
 	{
 		this.keyToInterest = keyToInterest;
 		
-		this.keywords.addAll(keywords);
+		addKeyword(keywords);
 		
 		InterestInterpreter.host = host;
 	}
@@ -152,7 +152,7 @@ public class InterestInterpreter implements AgentReaction
 			if(newInterest == "" || newInterest == null)
 				return false;
 			
-			return keywords.remove(target) && keywords.add(newInterest);
+			return removeKeyword(target) && addKeyword(newInterest);
 		}
 	}
 	
@@ -174,22 +174,6 @@ public class InterestInterpreter implements AgentReaction
 		return "{" + keyToInterest + ":" + keywords.toString() + "}";
 	}
 	
-	@Override
-	public boolean equals(Object o)
-	{
-		if (o == null)
-		{
-			return false;
-		}
-		else if (o instanceof InterestInterpreter)
-		{
-			InterestInterpreter i = (InterestInterpreter) o;
-			return this.keyToInterest.equals(i.keyToInterest) && this.keywords.containsAll(i.keywords); //Not symmetric 
-		}
-		
-		return false;
-	}
-	
 	public String getKeyToInterest()
 	{
 		return keyToInterest;
@@ -201,9 +185,9 @@ public class InterestInterpreter implements AgentReaction
 	 * @param keywords Collection of keywords to be checked for containment in this InterestInterpreter
 	 * @return true if this InterestInterpreter contains all of the elements in the specified collection
 	 */
-	public boolean contains(Collection<? extends String> keywords)
+	public boolean containsAll(Collection<? extends String> keywords)
 	{
-		return keywords.containsAll(keywords);
+		return this.keywords.containsAll(keywords);
 	}
 	
 	/**
@@ -212,9 +196,14 @@ public class InterestInterpreter implements AgentReaction
 	 * @param keywords Array of keywords to be checked for containment in this InterestInterpreter
 	 * @return true if this InterestInterpreter contains all of the keywords in the specified array
 	 */
-	public boolean contains(String... keywords)
+	public boolean containsAll(String... keywords)
 	{
-		return contains(Arrays.asList(keywords));
+		return containsAll(Arrays.asList(keywords));
+	}
+	
+	public boolean containsAll(InterestInterpreter i)
+	{
+		return containsAll(i.keywords);
 	}
 	
 	public void execute(AgentMessage cmd)

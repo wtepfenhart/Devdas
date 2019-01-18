@@ -51,7 +51,6 @@ public class AgentMessage {
     	this.read(j);
     }
     
-	@SuppressWarnings("serial")
 	public AgentMessage(AgentMessage command)
     {
     	id = (UUID.randomUUID()).toString();
@@ -59,7 +58,10 @@ public class AgentMessage {
 	    destination = command.source;
 	    topic = command.topic;
 	    interest = command.interest;
-		parms.put("ReplyTo", new ArrayList<String>(){{add(command.id);}});
+	    
+	    ArrayList<String> p = new ArrayList<String>();
+	    p.add(command.id);
+		parms.put("ReplyTo", p);
     }
 
 	/**
@@ -72,16 +74,14 @@ public class AgentMessage {
 	@SuppressWarnings("unchecked")
 	public void read(JSONObject jo)
     {
-		id = (String) jo.get("messageID");
-		source = (String) jo.get("source");
-		destination = (String) jo.get("destination");
-		topic = (String) jo.get("topic");
-		interest = (String) jo.get("interest");
-		parms = (Map<String, ArrayList<String>>) jo.get("parms");
+		id = (String) jo.getOrDefault("messageID", id);
+		source = (String) jo.getOrDefault("source", source);
+		destination = (String) jo.getOrDefault("destination", destination);
+		topic = (String) jo.getOrDefault("topic", topic);
+		interest = (String) jo.getOrDefault("interest", interest);
+		parms = (Map<String, ArrayList<String>>) jo.getOrDefault("parms", parms);
     }
     
-
-
 	@Override
     public String toString()
     {
@@ -111,9 +111,9 @@ public class AgentMessage {
         return j.toJSONString();
     }
 
-    @SuppressWarnings("serial")
-	public void addParam(boolean replace, String key, String... value)
+	public boolean addParam(boolean replace, String key, String... value)
     {
+		boolean result = false;
     	if(key != null) //Should never add null keys
     	{
     		for (String v: value)
@@ -125,18 +125,24 @@ public class AgentMessage {
     					if (replace)
     					{
     						parms.get(key).clear();
-    						parms.get(key).add(v);
+    						result = parms.get(key).add(v);
     					}
     					else
-    						parms.get(key).add(v);
+    						result = parms.get(key).add(v);
     				}
     				else
     				{
-    					parms.put(key, new ArrayList<String>(){{add(v);}});
+    					ArrayList<String> vp = new ArrayList<String>();
+    					vp.add(v);
+    					parms.put(key, vp);
+    					
+    					result = parms.containsKey(key);
     				}
     			}
     		}
     	}
+    	
+    	return result;
     }
     
     //Assumes no replacement
@@ -164,6 +170,10 @@ public class AgentMessage {
     		return this.parms.get(key).get(index);
     	}
     	catch(NullPointerException e)
+    	{
+    		return null;
+    	}
+    	catch(IndexOutOfBoundsException e)
     	{
     		return null;
     	}

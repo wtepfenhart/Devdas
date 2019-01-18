@@ -66,11 +66,11 @@ public class CommandMessage
 	@SuppressWarnings("unchecked")
 	public void read(JSONObject jo)
     {
-		id = (String) jo.get("messageID");
-		type = (String) jo.get("type");
-		source = (String) jo.get("source");
-		setDestination((String) jo.get("destination"));
-		parms = (jo.get("parms") == null) ? parms : (Map<String, String>) jo.get("parms");
+		id = (String) jo.getOrDefault("messageID", id);
+		type = (String) jo.getOrDefault("type", type);
+		source = (String) jo.getOrDefault("source", source);
+		setDestination((String) jo.getOrDefault("destination", destination));
+		parms = (Map<String, String>) jo.getOrDefault("parms", parms);
     }
     
 	
@@ -104,9 +104,15 @@ public class CommandMessage
     }
     
 ////////////////////////////*SETTERS*////////////////////////////
-    public void addParam(String key, String value)
-    {		
-    	parms.put(key, (value == null) ? "" : value);    	
+    public boolean addParam(String key, String value)
+    {
+    	if (key != null)
+    	{
+    		parms.put(key, (value == null) ? "" : value);
+    		return parms.containsKey(key);
+    	}
+    	
+    	return false;
     }
 
 	public void setDestination(String destination)

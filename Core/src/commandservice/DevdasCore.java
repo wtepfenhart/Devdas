@@ -459,7 +459,6 @@ public abstract class DevdasCore
 	/**
 	 * Handles terminating the whole application with no clean-up; used if in case of critical errors
 	 */
-	@SuppressWarnings("unused")
 	public void exit(CommandMessage command) 
 	{
 		//		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Exit command", "Info");
@@ -481,7 +480,6 @@ public abstract class DevdasCore
 	/**
 	 * Handles stopping a program from operating
 	 */
-	@SuppressWarnings("unused")
 	public void stop(CommandMessage command)
 	{
 		//		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Stop command", "Info");
@@ -492,7 +490,6 @@ public abstract class DevdasCore
 	/**
 	 * Handles starting a program if it has been stopped
 	 */
-	@SuppressWarnings("unused")
 	public void start(CommandMessage command)
 	{
 		//		this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Start command", "Info");
@@ -505,7 +502,6 @@ public abstract class DevdasCore
 	 * 
 	 * @param processName Identifier for the process
 	 */
-	@SuppressWarnings("unused")
 	public void pause(CommandMessage command)
 	{
 		agentRunning = false;
@@ -519,7 +515,6 @@ public abstract class DevdasCore
 	 * 
 	 * Will throw an exception if it cannot retrieve the running state
 	 */
-	@SuppressWarnings("unused")
 	public void report(CommandMessage command)
 	{
 		//this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Report command", "Info");
@@ -533,17 +528,20 @@ public abstract class DevdasCore
 	 * 
 	 * @param processName Identifier for the process
 	 */
-	@SuppressWarnings("unused")
 	public void resume(CommandMessage command)
 	{
 		agentRunning = true;
 		//this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Resume command", "Info");
 	}
 
-	@SuppressWarnings("unused")
 	public void status(CommandMessage command)
 	{
 		//this.logger.sendLogMessage("Attempt", this.toString() + " attempting to process Status command", "Info");
+	}
+	
+	public void announce(CommandMessage command)
+	{
+		System.out.println(agentReactions);
 	}
 
 	////////////////////////////*END OF METHODS USED BY COMMAND PROCESSORS*////////////////////////////

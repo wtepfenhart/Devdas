@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import commandservice.AgentMessage;
 import commandservice.AgentReaction;
+import commandservice.CommandMessage;
 import commandservice.DevdasCore;
 import devdas.Configuration; 
 
@@ -23,6 +24,14 @@ public class TextToIntention extends DevdasCore
 	public TextToIntention(Configuration config)
 	{
 		super(config);
+	}
+	
+	@Override
+	public void announce(CommandMessage command)
+	{
+		super.announce(command);
+		
+		System.out.println(keyToInterests);
 	}
 	
 	/**
@@ -50,7 +59,7 @@ public class TextToIntention extends DevdasCore
 				InterestInterpreter i = new InterestInterpreter(TextToIntention.this, cmd.getSource(), cmd.getParamList("Interests"));
 				System.err.println(addKeyToInterests(i));
 				
-				announce();
+				announce(null);
 				
 				//Testing KeyToInterests methods
 /*
@@ -59,28 +68,28 @@ public class TextToIntention extends DevdasCore
 				System.err.println("TRUE = " + modifyKeyToInterests(cmd.getSource(), dummy));
 				System.err.println("FALSE = " + modifyKeyToInterests("NOT AN AGENT", dummy));
 				
-				announce();
+				announce(null);
 				
 				InterestInterpreter dummy2 = new InterestInterpreter(TextToIntention.this, "NEW_DUMMY", "BLANK2", "BLANK3");
 				System.err.println("=== TEST 2: ADD ===");
 				System.err.println("TRUE = " + addKeyToInterests(dummy2));
 				
-				announce();
+				announce(null);
 				
 				InterestInterpreter dummy3 = new InterestInterpreter(TextToIntention.this, "NEW_DUMMY", dummy.getKeywords());
 				System.err.println("TRUE = " + addKeyToInterests(dummy3));
 				System.err.println("FALSE = " + addKeyToInterests(dummy2));
 				
-				announce();
+				announce(null);
 				
 				System.err.println("=== TEST 3: REMOVE ===");
 				System.err.println("TRUE = " + removeKeyToInterests("DUMMY"));
 				System.err.println("TRUE = " + removeKeyToInterests(dummy3));
-				System.err.println("FALSE = " + removeKeyToInterests(dummy)); //Already removed
-				System.err.println("FALSE = " + removeKeyToInterests("DUMMY"));			   // " "
+				System.err.println("FALSE = " + removeKeyToInterests(dummy));   //Already removed
+				System.err.println("FALSE = " + removeKeyToInterests("DUMMY")); // " "
 				
-				announce();
- */
+				announce(null);
+ */				
 			}
 		}
 	}
@@ -92,7 +101,7 @@ public class TextToIntention extends DevdasCore
 	 */
 	private class BestMatch implements AgentReaction
 	{
-		private ArrayList<AgentMessage> matchQueue = new ArrayList<AgentMessage>();
+		private ArrayList<AgentMessage> matchQueue = new ArrayList<AgentMessage>(); //Not a "queue" in the truest sense, but fulfills a similar role
 		
 		public BestMatch()
 		{}
@@ -116,24 +125,27 @@ public class TextToIntention extends DevdasCore
 					}
 				}
 				
-				closest.add(highest);
-				matchQueue.remove(highest);
-				
-				//Determine which (if any) InterestInterpreters are within proximity to the highest match percentage
-				for(int i = 0; i < matchQueue.size(); i++)
+				if(Double.valueOf(highest.getParam("Match", 0)) != 0.0)
 				{
-					if(Math.abs( Double.valueOf(matchQueue.get(i).getParam("Match", 0)) - Double.valueOf(highest.getParam("Match", 0)) ) <= EPSILON) //Approximately equal
+					closest.add(highest);
+					matchQueue.remove(highest);
+
+					//Determine which (if any) InterestInterpreters are within proximity to the highest match percentage
+					for(int i = 0; i < matchQueue.size(); i++)
 					{
-						closest.add(matchQueue.get(i));
+						if(Math.abs( Double.valueOf(matchQueue.get(i).getParam("Match", 0)) - Double.valueOf(highest.getParam("Match", 0)) ) <= EPSILON) //Approximately equal
+						{
+							closest.add(matchQueue.get(i));
+						}
 					}
-				}
-				
-				//Send a message to the Agents which are in the queue
-				for(AgentMessage msg : closest)
-				{
-					msg.setTopic("Match"); //TODO There's got to be a better topic name...
-					
-					sendAgentMessage(msg.getInterest(), msg);
+
+					//Send a message to the Agents which are in the queue
+					for(AgentMessage msg : closest)
+					{
+						msg.setTopic("Match"); //TODO There's got to be a better topic name...
+
+						sendAgentMessage(msg.getInterest(), msg);
+					}
 				}
 				
 				//Empty the queue after sending the message(s)
@@ -142,7 +154,6 @@ public class TextToIntention extends DevdasCore
 		}
 	}
 	
-	@SuppressWarnings("serial")
 	public void initializeAgentReactions()
 	{
 		agentInterests.add("Announcement");
@@ -150,8 +161,14 @@ public class TextToIntention extends DevdasCore
 		agentInterests.add("InterestInterpreter");
 		
 		agentReactions.put("ContextFreeText", new ArrayList<AgentReaction>());
-		agentReactions.put("Announcement", new ArrayList<AgentReaction>(){{add(new Initializer());}});
-		agentReactions.put("InterestInterpreter", new ArrayList<AgentReaction>(){{add(new BestMatch());}});
+		
+			ArrayList<AgentReaction> init = new ArrayList<AgentReaction>();
+			init.add(new Initializer());
+		agentReactions.put("Announcement", init);
+		
+			ArrayList<AgentReaction> bm = new ArrayList<AgentReaction>();
+			bm.add(new BestMatch());
+		agentReactions.put("InterestInterpreter", bm);
 	}
 	
 	public void agentActivity()
@@ -165,12 +182,6 @@ public class TextToIntention extends DevdasCore
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	}
-	
-	public void announce() //TODO May need to move up into Core as systemCommand method
-	{
-		System.out.println(agentReactions);
-		System.out.println(keyToInterests);
 	}
 	
 	/**
@@ -220,7 +231,7 @@ public class TextToIntention extends DevdasCore
 		{
 			if(keys[i].getKeyToInterest().equals(keyToInterest.getKeyToInterest()))
 			{
-				result = keyToInterest.equals(keys[i]) ? keyToInterests.remove(i) != null : keyToInterests.get(i).removeKeyword(keyToInterest.getKeywords());
+				result = keyToInterest.containsAll(keys[i]) ? keyToInterests.remove(i) != null : keyToInterests.get(i).removeKeyword(keyToInterest.getKeywords());
 			}
 		}
 		

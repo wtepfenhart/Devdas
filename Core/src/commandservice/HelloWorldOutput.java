@@ -54,8 +54,12 @@ public class HelloWorldOutput extends DevdasCore
 		 * Simple print line to a console
 		 * @return 
 		 */
-		public void execute(AgentMessage cmd) {
-			System.out.println(cmd.getParamList("Subject"));
+		public void execute(AgentMessage cmd)
+		{
+			for(String phrase : cmd.getParamList("Subject"))
+			{
+				System.out.println(phrase);
+			}
 		}
 	}
 
@@ -66,7 +70,9 @@ public class HelloWorldOutput extends DevdasCore
 	{
 		agentInterests.add("Announcement");
 		Say s = new Say();
-		agentReactions.put("Announcement", new ArrayList<AgentReaction>(){{add(s);}});
+		ArrayList<AgentReaction> r = new ArrayList<AgentReaction>();
+		r.add(s);
+		agentReactions.put("Announcement", r);
 	}
 
 	/**
