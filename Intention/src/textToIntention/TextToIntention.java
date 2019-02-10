@@ -101,10 +101,67 @@ public class TextToIntention extends DevdasCore
 	 */
 	private class BestMatch implements AgentReaction
 	{
-		private ArrayList<AgentMessage> matchQueue = new ArrayList<AgentMessage>(); //Not a "queue" in the truest sense, but fulfills a similar role
+		private ArrayList<AgentMessage> matchQueue = new ArrayList<AgentMessage>(); //Not a "queue" per say, but fulfills a similar role
 		
 		public BestMatch()
 		{}
+		
+		private void merge(AgentMessage[] in, AgentMessage[] out, int start, int inc)
+		{
+			int bound1 = Math.min(start + inc, in.length);
+			int bound2 = Math.min(start + 2 * inc, in.length);
+			
+			int x = start;
+			int y = start + inc;
+			int z = start;
+			
+			while(x < bound1 && y < bound2)
+			{
+				if(Double.compare(Double.valueOf(in[x].getParam("Match", 0)), Double.valueOf(in[y].getParam("Match", 0))) < 0)
+				{
+					out[z++] = in[x++];
+				}
+				else
+				{
+					out[z++] = in[y++];
+				}
+			}
+			
+			if(x < bound1)
+			{
+				System.arraycopy(in, x, out, z, bound1 - x);
+			}
+			else if(y < bound2)
+			{
+				System.arraycopy(in, y, out, z, bound2 - y);
+			}
+		}
+		
+		private void mergeSort(AgentMessage[] orig)
+		{
+			int n = orig.length;
+			
+			AgentMessage[] src = orig;
+			AgentMessage[] dest = new AgentMessage[n];
+			AgentMessage[] temp;
+			
+			for(int i = 1; i < n; i *= 2)
+			{
+				for(int j = 0; j < n; j += 2 * i)
+				{
+					merge(src, dest, j, i);
+				}
+				
+				temp = src;
+				src = dest;
+				dest = temp;
+			}
+			
+			if(orig != src)
+			{
+				System.arraycopy(src, 0, orig, 0, n);
+			}
+		}
 		
 		public void execute(AgentMessage command)
 		{
@@ -113,43 +170,52 @@ public class TextToIntention extends DevdasCore
 			//Only once all InterestInterpreters have sent a command can we determine the highest match percentage
 			if(matchQueue.size() == keyToInterests.size())
 			{
-				AgentMessage highest = matchQueue.get(0);
+				AgentMessage[] queue = matchQueue.toArray(new AgentMessage[matchQueue.size()]);
 				ArrayList<AgentMessage> closest = new ArrayList<>();
 				
-				//Determine which InterestInterpreter has the highest match percentage
-				for(int i = 1; i < matchQueue.size(); i++)
+				//Sort matchQueue
 				{
-					if(Double.valueOf(matchQueue.get(i).getParam("Match", 0)) > Double.valueOf(highest.getParam("Match", 0)))
+					mergeSort(queue);
+
+					matchQueue.clear();
+					for(int i = 0; i < queue.length; i++)
 					{
-						highest = matchQueue.get(i);
+						matchQueue.add(i, queue[queue.length - (1 + i)]); //Reverse-order addition
 					}
 				}
 				
-				if(Double.valueOf(highest.getParam("Match", 0)) != 0.0)
+				//Determine which (if any) InterestInterpreters are within proximity to the highest match percentage
 				{
-					closest.add(highest);
-					matchQueue.remove(highest);
-
-					//Determine which (if any) InterestInterpreters are within proximity to the highest match percentage
-					for(int i = 0; i < matchQueue.size(); i++)
+					if(Double.valueOf(matchQueue.get(0).getParam("Match", 0)) != 0.0)
 					{
-						if(Math.abs( Double.valueOf(matchQueue.get(i).getParam("Match", 0)) - Double.valueOf(highest.getParam("Match", 0)) ) <= EPSILON) //Approximately equal
+						closest.add(matchQueue.remove(0));
+
+						for(int i = 0; i < matchQueue.size(); i++)
 						{
-							closest.add(matchQueue.get(i));
+							if(Math.abs( Double.valueOf(matchQueue.get(0).getParam("Match", 0)) - Double.valueOf(closest.get(0).getParam("Match", 0)) ) <= EPSILON) //Approximately equal
+							{
+								closest.add(matchQueue.remove(0));
+							}
+							else
+							{
+								break; //No need to check anymore; matchQueue is sorted
+							}
 						}
-					}
 
-					//Send a message to the Agents which are in the queue
-					for(AgentMessage msg : closest)
-					{
-						msg.setTopic("Match"); //TODO There's got to be a better topic name...
+						//Send a message to the Agents which are in the queue
+						for(AgentMessage msg : closest)
+						{
+							msg.setTopic("Match"); //TODO There's got to be a better topic name...
 
-						sendAgentMessage(msg.getInterest(), msg);
+							sendAgentMessage(msg.getInterest(), msg);
+						}
 					}
 				}
 				
 				//Empty the queue after sending the message(s)
-				matchQueue.clear();
+				{
+					matchQueue.clear();
+				}
 			}
 		}
 	}

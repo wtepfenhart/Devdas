@@ -46,7 +46,6 @@ public class InterestInterpreter implements AgentReaction
 	 */
 	private double isInterested(String contextFreeText)
 	{
-		int searchCount = 0;
 		int matchCount = 0;
 		double result = 0;
 		
@@ -55,9 +54,7 @@ public class InterestInterpreter implements AgentReaction
 			for(String word : contextFreeText.split(" "))
 			{	
 				for(String key : keywords)
-				{
-					searchCount++;
-					
+				{	
 					if(key == null)
 					{
 						System.err.println("NULL"); //ERROR; keys should never be null
@@ -69,8 +66,7 @@ public class InterestInterpreter implements AgentReaction
 					}
 				}
 				
-				result += ((double) matchCount / searchCount);
-				searchCount = 0;
+				result += ((double) matchCount / keywords.size());
 				matchCount = 0;
 			}
 		
