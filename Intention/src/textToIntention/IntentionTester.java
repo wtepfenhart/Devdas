@@ -8,6 +8,7 @@ import java.util.Arrays;
 
 import commandservice.AgentMessage;
 import commandservice.AgentReaction;
+import commandservice.CommandMessage;
 import commandservice.DevdasCore;
 import devdas.Configuration;
 
@@ -62,15 +63,18 @@ public class IntentionTester extends DevdasCore
 					System.err.print(", ");
 				}
 			}
+			
+			
 		}
 	}
 
-	@SuppressWarnings("serial")
 	public void initializeAgentReactions()
 	{
 		this.agentInterests.add("Match");
 		
-		this.agentReactions.put("Match", new ArrayList<AgentReaction>(){{add(new Responder());}});
+		ArrayList<AgentReaction> r = new ArrayList<AgentReaction>();
+		r.add(new Responder());
+		this.agentReactions.put("Match", r);
 	}
 
 	@Override
@@ -94,7 +98,16 @@ public class IntentionTester extends DevdasCore
 		AgentMessage b = new AgentMessage();
 		b.addParam("Text", msg);
 		b.setTopic("ContextFreeText");
-		sendAgentMessage(b.getRoute(), b);
+		sendAgentMessage(b);
+	}
+	
+	@Override
+	public void status(CommandMessage cmd)
+	{
+		sendSystemMessage(new CommandMessage(cmd)
+		{{
+			this.addParam("Response", Boolean.toString(IntentionTester.this.isRunning()));
+		}});
 	}
 	
 	public static void main(String[] args)

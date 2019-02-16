@@ -117,7 +117,26 @@ public class CommandMessage
 
 	public void setDestination(String destination)
 	{
-		this.destination = destination;
+		if(destination == null)
+		{
+			this.destination = "";
+		}
+		else
+		{
+			this.destination = destination;
+		}
+	}
+	
+	public void setType(String type)
+	{
+		if(type == null)
+		{
+			this.type = "Command";
+		}
+		else
+		{
+			this.type = type;
+		}
 	}
     
 ////////////////////////////*GETTERS*////////////////////////////
@@ -141,6 +160,11 @@ public class CommandMessage
     public String getType()
     {
     	return type == null ? "" : type;
+    }
+    
+    public String getSource()
+    {
+    	return source == null ? "" : source;
     }
     
     /**

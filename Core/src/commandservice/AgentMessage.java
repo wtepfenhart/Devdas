@@ -40,7 +40,6 @@ public class AgentMessage {
     	id = (UUID.randomUUID()).toString();
     	source = hostID;
     	setDestination("");
-    	
     }
     
     /**
@@ -118,26 +117,23 @@ public class AgentMessage {
     	{
     		for (String v: value)
     		{
-    			if(v != null) //Should never add null values
+    			if (parms.containsKey(key))
     			{
-    				if (parms.containsKey(key))
+    				if (replace)
     				{
-    					if (replace)
-    					{
-    						parms.get(key).clear();
-    						result = parms.get(key).add(v);
-    					}
-    					else
-    						result = parms.get(key).add(v);
+    					parms.get(key).clear();
+    					result = parms.get(key).add((v == null) ? "" : v);
     				}
     				else
-    				{
-    					ArrayList<String> vp = new ArrayList<String>();
-    					vp.add(v);
-    					parms.put(key, vp);
-    					
-    					result = parms.containsKey(key);
-    				}
+    					result = parms.get(key).add((v == null) ? "" : v);
+    			}
+    			else
+    			{
+    				ArrayList<String> vp = new ArrayList<String>();
+    				vp.add((v == null) ? "" : v);
+    				parms.put(key, vp);
+
+    				result = parms.containsKey(key);
     			}
     		}
     	}
@@ -215,21 +211,45 @@ public class AgentMessage {
 		System.out.println(cmd);
     }
 
-	public String getDestination() {
+	public String getDestination()
+	{
 		return destination == null ? "" : destination;
 	}
 
-	public void setDestination(String destination) {
-		this.destination = destination;
+	public void setDestination(String destination)
+	{
+		if(destination == null)
+		{
+			this.destination = "";
+		}
+		else
+		{
+			this.destination = destination;
+		}
 	}
 
-	public void setTopic(String string) {
-		topic = string;
+	public void setTopic(String string)
+	{
+		if(string == null)
+		{
+			this.topic = "";
+		}
+		else
+		{
+			this.topic = string;
+		}
 	}
 	
 	public void setInterest(String interest)
 	{
-		this.interest = interest;
+		if(interest == null)
+		{
+			this.interest = "";
+		}
+		else
+		{
+			this.interest = interest;
+		}
 	}
 	
 	public String getInterest()

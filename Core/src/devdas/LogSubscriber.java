@@ -73,7 +73,7 @@ public class LogSubscriber extends ExchangeSubscriber {
 		@SuppressWarnings("unused")
 		ExchangeSubscriber myReciever, logReciever;
 		Configuration config = new Configuration(args);
-		logReciever = new LogSubscriber(config, "Log");
+		logReciever = new LogSubscriber(config, "System");
 	}
 
 }

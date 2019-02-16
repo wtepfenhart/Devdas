@@ -26,7 +26,7 @@ public class AgentServicePublisher extends RoutingPublisher
     	AgentMessage cmd = new AgentMessage();
     	cmd.read(msg);
     	
-    	super.setMessage(cmd.toJSONString(),cmd.getDestination());
+    	super.setMessage(cmd.getRoute(), cmd.toJSONString());
     }
     
     /**
@@ -34,7 +34,7 @@ public class AgentServicePublisher extends RoutingPublisher
      */
     public void setMessage(AgentMessage cmd)
     {
-    	super.setMessage(cmd.toJSONString(), cmd.getRoute());
+    	super.setMessage(cmd.getRoute(), cmd.toJSONString());
     }
     
     

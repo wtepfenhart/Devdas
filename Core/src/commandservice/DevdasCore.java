@@ -250,7 +250,7 @@ public abstract class DevdasCore
 	 * @param msg the CommandService message that contains the command
 	 */
 	private void processSystemCommand(CommandMessage msg) 
-	{
+	{	
 		switch(msg.getType())
 		{
 		case "Command":
@@ -294,7 +294,7 @@ public abstract class DevdasCore
 	 */
 	private void handleSystemBroadcast(CommandMessage msg) {
 		// check to see if it is actually command that's been broadcast to all agents
-		String cmd = msg.getParam("command");
+		String cmd = msg.getParam("Command");
 		
 		if (cmd != null && !cmd.isEmpty())
 		{
@@ -310,7 +310,7 @@ public abstract class DevdasCore
 	 * @param msg
 	 */
 	private void handleSystemCommand(CommandMessage msg) {
-		String cmd = msg.getParam("command");
+		String cmd = msg.getParam("Command");
 		
 		// Check to see if there's a command provided in the message
 		if (cmd != null && !cmd.isEmpty())
@@ -394,6 +394,11 @@ public abstract class DevdasCore
 	 * 
 	 * @param cmd The CommandMessage to send
 	 */
+	public void sendSystemMessage(String dest, CommandMessage cmd)
+	{
+		commandPublisher.setMessage(dest, cmd.toString());
+	}
+	
 	public void sendSystemMessage(CommandMessage cmd)
 	{
 		commandPublisher.setMessage(cmd);
@@ -402,6 +407,11 @@ public abstract class DevdasCore
 	public void sendAgentMessage(String rt, AgentMessage cmd)
 	{
 		agentPublisher.setMessage(rt, cmd.toString());
+	}
+	
+	public void sendAgentMessage(AgentMessage cmd)
+	{
+		agentPublisher.setMessage(cmd);
 	}
 
 	public void run() 

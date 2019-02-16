@@ -26,7 +26,7 @@ public class CommandServicePublisher extends RoutingPublisher
     	CommandMessage cmd = new CommandMessage();
     	cmd.read(msg);
     	
-    	super.setMessage(cmd.toJSONString(),cmd.getDestination());
+    	super.setMessage(cmd.getDestination(), cmd.toJSONString());
     }
     
     /**
@@ -34,7 +34,7 @@ public class CommandServicePublisher extends RoutingPublisher
      */
     public void setMessage(CommandMessage cmd)
     {
-    	super.setMessage(cmd.toJSONString(), cmd.getDestination());
+    	super.setMessage(cmd.getDestination(), cmd.toJSONString());
     }
     
     

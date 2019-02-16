@@ -238,10 +238,19 @@ public class TextToIntention extends DevdasCore
 	}
 	
 	public void agentActivity()
-	{
+	{	//Testing mechanism for sending CommandMessages; this should really be done by a separate agent
+		for (InterestInterpreter i : this.keyToInterests)
+		{	
+			CommandMessage msg = new CommandMessage();
+				msg.setDestination(i.getKeyToInterest());
+				msg.setType("Command");
+				msg.addParam("Command", "Status");
+			this.sendSystemMessage(msg.getDestination(), msg);
+		}
+		
 		try
 		{
-			Thread.sleep(10);
+			Thread.sleep(100000);
 		}
 		catch(InterruptedException e)
 		{

@@ -92,7 +92,7 @@ public class RoutingSubscriber {
 		@SuppressWarnings("unused")
 		RoutingSubscriber myReciever;
 		Configuration config = new Configuration(args);
-		myReciever = new RoutingSubscriber(config, "Stuff", rts);
+		myReciever = new RoutingSubscriber(config, "Control", rts);
 
 	}
 
