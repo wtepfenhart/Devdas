@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.TreeMap;
 
 import commandservice.AgentMessage;
 import commandservice.AgentReaction;
@@ -23,6 +24,7 @@ public class InterestInterpreter implements AgentReaction
 	private Set<String> keywords = new HashSet<>();
 	private Set<String> matchedKeywords = new HashSet<>();
 	private static DevdasCore host;
+	private final static int PERCENTAGE_BASE = 10000; //Translates to 100.00 percent
 	
 	public InterestInterpreter(DevdasCore host, String keyToInterest, Collection<? extends String> keywords)
 	{
@@ -39,38 +41,80 @@ public class InterestInterpreter implements AgentReaction
 	}
 	
 	/**
+	 * Used to manipulate comparisons within the {@code isInterested()} method
+	 */
+	private class ComparisonObject implements Comparable<ComparisonObject>
+	{
+		private String str;
+		
+		public ComparisonObject(String str)
+		{
+			this.str = str.toLowerCase();
+		}
+		
+		@Override
+		public boolean equals(Object obj)
+		{
+			if(obj instanceof ComparisonObject)
+			{
+				String str = ((ComparisonObject) obj).str;
+				return this.str.contains(str);
+			}
+
+			return false;
+		}
+		
+		@Override
+		public int compareTo(ComparisonObject obj)
+		{
+			if(this.str.contains(obj.str))
+			{
+				return 0;
+			}
+			
+			return this.str.compareToIgnoreCase(obj.str);
+		}
+	}
+	
+	/**
 	 * Checks to see if a String of raw text contains any matches to the set of keywords known by the Agent.
 	 * 
 	 * @param contextFreeText String phrase whose presence in the set of keywords is to be tested
-	 * @return Returns the number of matches to the keywords in the String as a percentage (out of 100)
+	 * @return Returns the number of matches to the keywords in the String as a percentage (out of {@value #PERCENTAGE_BASE}})
 	 */
-	private double isInterested(String contextFreeText)
+	private int isInterested(String contextFreeText)
 	{
 		int matchCount = 0;
-		double result = 0;
 		
 		if(contextFreeText != null && contextFreeText.length() != 0) //No sense in checking an empty reference
-		{
-			for(String word : contextFreeText.split(" "))
-			{	
-				for(String key : keywords)
-				{	
-					if(key == null)
-					{
-						System.err.println("NULL"); //ERROR; keys should never be null
-					}
-					else if(word.toLowerCase().contains(key.toLowerCase()))
-					{
-						matchCount++;
-						matchedKeywords.add(key);
-					}
+		{		
+			TreeMap<ComparisonObject, String> kMap = new TreeMap<>();
+			
+			for(String key : keywords)
+			{
+				if(key == null)
+				{
+					System.err.println("NULL"); //ERROR; keys should never be null
 				}
-				
-				result += ((double) matchCount / keywords.size());
-				matchCount = 0;
+				else
+				{
+					ComparisonObject obj = new ComparisonObject(key);
+					kMap.put(obj, key);
+				}
 			}
-		
-			return result * 100;
+			
+			for(String word: contextFreeText.split(" "))
+			{
+				ComparisonObject obj = new ComparisonObject(word);
+				
+				if(kMap.containsKey(obj))
+				{
+					matchCount++;
+					matchedKeywords.add(word);
+				}
+			}
+			
+			return (matchCount * PERCENTAGE_BASE / keywords.size());
 		}
 		
 		return 0;
@@ -164,6 +208,14 @@ public class InterestInterpreter implements AgentReaction
 		}
 	}
 	
+	/**
+	 * @return The value representing 100 percent (1) according to this class
+	 */
+	public static int getPercentageBase()
+	{
+		return PERCENTAGE_BASE;
+	}
+	
 	@Override
 	public String toString()
 	{
@@ -218,7 +270,7 @@ public class InterestInterpreter implements AgentReaction
 				for(String phrase : cmd.getParamList("Text"))
 				{
 					System.err.println("\tTEXT: " + phrase);
-					double interest = this.isInterested(phrase);
+					int interest = this.isInterested(phrase);
 					System.err.println("\tMATCHES: " + interest);
 					
 					AgentMessage response = setResponse(cmd, interest);
@@ -237,12 +289,12 @@ public class InterestInterpreter implements AgentReaction
 	 * @param count Total match percentage (from {@link #isInterested(String)} method)
 	 * @return A new AgentMessage that is ready to be sent
 	 */
-	private AgentMessage setResponse(AgentMessage cmd, double count)
+	private AgentMessage setResponse(AgentMessage cmd, int count)
 	{
 		AgentMessage msg = new AgentMessage(cmd);
 		msg.setTopic("InterestInterpreter");
 		msg.setInterest(this.keyToInterest);
-		msg.addParam("Match", Double.toString(count));
+		msg.addParam("Match", Integer.toString(count));
 		msg.addParam("Keyword", matchedKeywords.toArray(new String[matchedKeywords.size()]));
 		
 		return msg;
@@ -292,7 +344,7 @@ public class InterestInterpreter implements AgentReaction
 			
 			if(!phraseResponse.equals("-1"))
 			{
-				System.out.printf("There is a %.2f%% match.%n", interpreter.isInterested(phraseResponse));
+				System.out.printf("There is a %.2f%% match.%n", interpreter.isInterested(phraseResponse) / 100.0);
 					System.out.println("----------------------------------------");
 			}
 			else

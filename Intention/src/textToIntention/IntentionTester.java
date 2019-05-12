@@ -44,7 +44,7 @@ public class IntentionTester extends DevdasCore
 		
 		public void execute(AgentMessage command)
 		{	
-			System.err.printf("\nReceived response: %.2f%% MATCH%n", Double.parseDouble(command.getParam("Match", 0)));
+			System.err.printf("\nReceived response: %.2f%% MATCH%n", Integer.parseInt(command.getParam("Match", 0)) / 100.0);
 			
 			System.err.print("Matched keyword(s): ");
 			
@@ -119,10 +119,10 @@ public class IntentionTester extends DevdasCore
 		
 		while(keywords.size() < 10)
 		{
-			System.out.print("Enter a keyword to target (-1 to stop): ");
+			System.out.print("Enter a keyword to target (ENTER to stop): ");
 			String response = scanner.nextLine();
 			
-			if(response.equals("-1"))
+			if(response.equals(""))
 			{
 				if(keywords.size() == 0)
 				{
